@@ -1,0 +1,47 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        php-version: ['8.2', '8.3']
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-version }}
+        extensions: curl, mbstring, zip, pdo, pdo_sqlite
+
+    - name: Install dependencies
+      run: |
+        composer install --no-interaction --prefer-dist
+
+    - name: Copy .env
+      run: cp .env.example .env
+
+    - name: Generate key
+      run: php artisan key:generate
+
+    - name: Create database
+      run: touch database/database.sqlite
+
+    - name: Run migrations
+      run: php artisan migrate --env=testing
+
+    - name: Run tests
+      run: php artisan test
+
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      if: always()
