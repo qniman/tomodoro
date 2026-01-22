@@ -589,10 +589,10 @@ copies or substantial portions of the Software.
 
 ## 📊 Статистика
 
-![GitHub Repo stars](https://img.shields.io/github/stars/username/tomodoro?style=social)
-![GitHub forks](https://img.shields.io/github/forks/username/tomodoro?style=social)
-![GitHub issues](https://img.shields.io/github/issues/username/tomodoro)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/username/tomodoro)
+![GitHub Repo stars](https://img.shields.io/github/stars/qniman/tomodoro?style=social)
+![GitHub forks](https://img.shields.io/github/forks/qniman/tomodoro?style=social)
+![GitHub issues](https://img.shields.io/github/issues/qniman/tomodoro)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/qniman/tomodoro)
 
 ---
 
