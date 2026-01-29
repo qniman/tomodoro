@@ -22,7 +22,7 @@ install.bat
 
 ### Что установилось?
 
-- ✅ PHP 8.3+ с расширениями (xml, dom, curl, mbstring, zip)
+- ✅ PHP 8.3+ с расширениями (xml, dom, curl, mbstring, zip, **sqlite3**)
 - ✅ Node.js 20 LTS + npm 10+
 - ✅ Composer 2.6+
 - ✅ Все зависимости (composer + npm)
@@ -34,6 +34,7 @@ install.bat
 1. Проверьте что установилось:
    ```bash
    php -v
+   php -m | grep sqlite3
    node -v
    npm -v
    composer -v
@@ -43,6 +44,7 @@ install.bat
    ```bash
    cat /tmp/composer.log
    cat /tmp/npm.log
+   cat /tmp/artisan-key.log
    ```
 
 3. Попробуйте вручную:
@@ -56,4 +58,6 @@ install.bat
 
 ---
 
-**Подробно**: [INSTALL_GUIDE_V31.md](INSTALL_GUIDE_V31.md)
+**Подробно**: [INSTALL_GUIDE_V31.md](INSTALL_GUIDE_V31.md)  
+**Версия скрипта**: v3.2
+

@@ -226,7 +226,7 @@ fi
 print_success "PHP готов"
 
 # Проверяем требуемые расширения
-REQUIRED_EXTENSIONS=("xml" "dom" "curl" "mbstring" "zip")
+REQUIRED_EXTENSIONS=("xml" "dom" "curl" "mbstring" "zip" "sqlite3")
 MISSING_EXTENSIONS=()
 
 for ext in "${REQUIRED_EXTENSIONS[@]}"; do
