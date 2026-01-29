@@ -1,261 +1,222 @@
 #!/bin/bash
 
-echo "========================================"
-echo "  Полная установка приложения Tomodoro"
-echo "========================================"
+echo ""
+echo "███████████████████████████████████████████"
+echo "  TOMODORO - Автоматическая установка"
+echo "███████████████████████████████████████████"
 echo ""
 
-# Цвета для вывода
+# Цвета
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Функция для проверки команды
+# Функции
 command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+print_status() {
+    echo -e "${BLUE}[*]${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}[✓]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[✗]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[!]${NC} $1"
+}
+
 # Определение ОС
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    OS="linux"
     if [ -f /etc/os-release ]; then
         . /etc/os-release
-        DISTRO=$ID
+        OS_TYPE=$ID
     fi
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-    OS="macos"
-else
-    OS="unknown"
+    OS_TYPE="macos"
 fi
 
-echo -e "${BLUE}Определена ОС: $OS${NC}"
+# ============================================
+# Установка для Ubuntu/Debian
+# ============================================
+install_debian() {
+    print_status "Обновление репозиториев..."
+    sudo apt-get update -qq
 
-# Функция установки на Ubuntu/Debian
-install_ubuntu() {
-    echo -e "${BLUE}Обновление репозиториев...${NC}"
-    sudo apt-get update
-
-    echo ""
-    echo "========================================"
-    echo "  Установка PHP"
-    echo "========================================"
     if ! command_exists php; then
-        echo -e "${BLUE}Установка PHP 8.2 и расширений...${NC}"
-        sudo apt-get install -y php8.2 php8.2-cli php8.2-fpm php8.2-mysql php8.2-sqlite3 php8.2-curl php8.2-xml php8.2-mbstring php8.2-zip php8.2-intl
-        echo -e "${GREEN}✓ PHP установлен${NC}"
+        print_status "Установка PHP 8.2..."
+        sudo apt-get install -y -qq php8.2-cli php8.2-fpm php8.2-sqlite3 php8.2-curl php8.2-xml php8.2-mbstring php8.2-zip php8.2-intl >/dev/null 2>&1
+        print_success "PHP установлен"
     else
-        echo -e "${GREEN}✓ PHP уже установлен$(php -v | head -n 1)${NC}"
+        print_success "PHP уже установлен"
     fi
 
-    echo ""
-    echo "========================================"
-    echo "  Установка Node.js и NPM"
-    echo "========================================"
     if ! command_exists node; then
-        echo -e "${BLUE}Установка Node.js...${NC}"
-        curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-        sudo apt-get install -y nodejs
-        echo -e "${GREEN}✓ Node.js установлен$(node -v)${NC}"
+        print_status "Установка Node.js..."
+        curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - >/dev/null 2>&1
+        sudo apt-get install -y -qq nodejs >/dev/null 2>&1
+        print_success "Node.js установлен"
     else
-        echo -e "${GREEN}✓ Node.js уже установлен$(node -v)${NC}"
+        print_success "Node.js уже установлен"
     fi
 
-    echo ""
-    echo "========================================"
-    echo "  Установка Composer"
-    echo "========================================"
     if ! command_exists composer; then
-        echo -e "${BLUE}Установка Composer...${NC}"
-        curl -sS https://getcomposer.org/installer | php
-        sudo mv composer.phar /usr/local/bin/composer
-        sudo chmod +x /usr/local/bin/composer
-        echo -e "${GREEN}✓ Composer установлен${NC}"
+        print_status "Установка Composer..."
+        curl -sS https://getcomposer.org/installer | php >/dev/null 2>&1
+        sudo mv composer.phar /usr/local/bin/composer >/dev/null 2>&1
+        sudo chmod +x /usr/local/bin/composer >/dev/null 2>&1
+        print_success "Composer установлен"
     else
-        echo -e "${GREEN}✓ Composer уже установлен${NC}"
-    fi
-
-    echo ""
-    echo "========================================"
-    echo "  Установка Git"
-    echo "========================================"
-    if ! command_exists git; then
-        echo -e "${BLUE}Установка Git...${NC}"
-        sudo apt-get install -y git
-        echo -e "${GREEN}✓ Git установлен${NC}"
-    else
-        echo -e "${GREEN}✓ Git уже установлен$(git --version)${NC}"
+        print_success "Composer уже установлен"
     fi
 }
 
-# Функция установки на CentOS/RHEL
-install_centos() {
-    echo -e "${BLUE}Обновление пакетов...${NC}"
-    sudo yum update -y
+# ============================================
+# Установка для CentOS/RHEL
+# ============================================
+install_redhat() {
+    print_status "Обновление пакетов..."
+    sudo yum update -y -q >/dev/null 2>&1
 
-    echo ""
-    echo "========================================"
-    echo "  Установка PHP"
-    echo "========================================"
     if ! command_exists php; then
-        echo -e "${BLUE}Установка PHP 8.2 и расширений...${NC}"
-        sudo yum install -y php php-cli php-fpm php-mysql php-sqlite php-curl php-xml php-mbstring php-zip php-intl
-        echo -e "${GREEN}✓ PHP установлен${NC}"
+        print_status "Установка PHP 8.2..."
+        sudo yum install -y -q php php-cli php-fpm php-sqlite php-curl php-xml php-mbstring php-zip php-intl >/dev/null 2>&1
+        print_success "PHP установлен"
     else
-        echo -e "${GREEN}✓ PHP уже установлен$(php -v | head -n 1)${NC}"
+        print_success "PHP уже установлен"
     fi
 
-    echo ""
-    echo "========================================"
-    echo "  Установка Node.js и NPM"
-    echo "========================================"
     if ! command_exists node; then
-        echo -e "${BLUE}Установка Node.js...${NC}"
-        curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
-        sudo yum install -y nodejs
-        echo -e "${GREEN}✓ Node.js установлен$(node -v)${NC}"
+        print_status "Установка Node.js..."
+        curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash - >/dev/null 2>&1
+        sudo yum install -y -q nodejs >/dev/null 2>&1
+        print_success "Node.js установлен"
     else
-        echo -e "${GREEN}✓ Node.js уже установлен$(node -v)${NC}"
+        print_success "Node.js уже установлен"
     fi
 
-    echo ""
-    echo "========================================"
-    echo "  Установка Composer"
-    echo "========================================"
     if ! command_exists composer; then
-        echo -e "${BLUE}Установка Composer...${NC}"
-        curl -sS https://getcomposer.org/installer | php
-        sudo mv composer.phar /usr/local/bin/composer
-        sudo chmod +x /usr/local/bin/composer
-        echo -e "${GREEN}✓ Composer установлен${NC}"
+        print_status "Установка Composer..."
+        curl -sS https://getcomposer.org/installer | php >/dev/null 2>&1
+        sudo mv composer.phar /usr/local/bin/composer >/dev/null 2>&1
+        sudo chmod +x /usr/local/bin/composer >/dev/null 2>&1
+        print_success "Composer установлен"
     else
-        echo -e "${GREEN}✓ Composer уже установлен${NC}"
-    fi
-
-    echo ""
-    echo "========================================"
-    echo "  Установка Git"
-    echo "========================================"
-    if ! command_exists git; then
-        echo -e "${BLUE}Установка Git...${NC}"
-        sudo yum install -y git
-        echo -e "${GREEN}✓ Git установлен${NC}"
-    else
-        echo -e "${GREEN}✓ Git уже установлен$(git --version)${NC}"
+        print_success "Composer уже установлен"
     fi
 }
 
-# Функция установки на macOS
+# ============================================
+# Установка для macOS
+# ============================================
 install_macos() {
-    echo -e "${BLUE}Проверка Homebrew...${NC}"
     if ! command_exists brew; then
-        echo -e "${BLUE}Установка Homebrew...${NC}"
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        print_status "Установка Homebrew..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" >/dev/null 2>&1
     fi
 
-    echo ""
-    echo "========================================"
-    echo "  Установка PHP"
-    echo "========================================"
     if ! command_exists php; then
-        echo -e "${BLUE}Установка PHP...${NC}"
-        brew install php
-        echo -e "${GREEN}✓ PHP установлен$(php -v | head -n 1)${NC}"
+        print_status "Установка PHP..."
+        brew install php >/dev/null 2>&1
+        print_success "PHP установлен"
     else
-        echo -e "${GREEN}✓ PHP уже установлен$(php -v | head -n 1)${NC}"
+        print_success "PHP уже установлен"
     fi
 
-    echo ""
-    echo "========================================"
-    echo "  Установка Node.js и NPM"
-    echo "========================================"
     if ! command_exists node; then
-        echo -e "${BLUE}Установка Node.js...${NC}"
-        brew install node
-        echo -e "${GREEN}✓ Node.js установлен$(node -v)${NC}"
+        print_status "Установка Node.js..."
+        brew install node >/dev/null 2>&1
+        print_success "Node.js установлен"
     else
-        echo -e "${GREEN}✓ Node.js уже установлен$(node -v)${NC}"
+        print_success "Node.js уже установлен"
     fi
 
-    echo ""
-    echo "========================================"
-    echo "  Установка Composer"
-    echo "========================================"
     if ! command_exists composer; then
-        echo -e "${BLUE}Установка Composer...${NC}"
-        brew install composer
-        echo -e "${GREEN}✓ Composer установлен${NC}"
+        print_status "Установка Composer..."
+        brew install composer >/dev/null 2>&1
+        print_success "Composer установлен"
     else
-        echo -e "${GREEN}✓ Composer уже установлен${NC}"
-    fi
-
-    echo ""
-    echo "========================================"
-    echo "  Установка Git"
-    echo "========================================"
-    if ! command_exists git; then
-        echo -e "${BLUE}Установка Git...${NC}"
-        brew install git
-        echo -e "${GREEN}✓ Git установлен${NC}"
-    else
-        echo -e "${GREEN}✓ Git уже установлен$(git --version)${NC}"
+        print_success "Composer уже установлен"
     fi
 }
 
-# Выбор функции установки в зависимости от ОС
-if [ "$OS" == "linux" ]; then
-    if [[ "$DISTRO" == "ubuntu" ]] || [[ "$DISTRO" == "debian" ]]; then
-        install_ubuntu
-    elif [[ "$DISTRO" == "centos" ]] || [[ "$DISTRO" == "rhel" ]] || [[ "$DISTRO" == "fedora" ]]; then
-        install_centos
-    else
-        echo -e "${YELLOW}⚠ Неизвестный дистрибутив Linux. Попытка использовать Ubuntu команды...${NC}"
-        install_ubuntu
-    fi
-elif [ "$OS" == "macos" ]; then
+# ============================================
+# Основная установка
+# ============================================
+
+# Определение и установка необходимых инструментов
+echo ""
+if [[ "$OS_TYPE" == "ubuntu" ]] || [[ "$OS_TYPE" == "debian" ]]; then
+    print_status "Обнаружена система на базе Debian"
+    install_debian
+elif [[ "$OS_TYPE" == "centos" ]] || [[ "$OS_TYPE" == "rhel" ]] || [[ "$OS_TYPE" == "fedora" ]]; then
+    print_status "Обнаружена система на базе RedHat"
+    install_redhat
+elif [[ "$OS_TYPE" == "macos" ]]; then
+    print_status "Обнаружена система macOS"
     install_macos
 else
-    echo -e "${RED}❌ Неподдерживаемая ОС${NC}"
+    print_warning "Неизвестная ОС. Попытка использовать Ubuntu команды..."
+    install_debian
+fi
+
+# Проверка обязательных инструментов
+echo ""
+print_status "Финальная проверка..."
+
+if ! command_exists php; then
+    print_error "PHP не установлен"
     exit 1
 fi
 
-echo ""
-echo "========================================"
-echo "  Установка зависимостей PHP (Composer)"
-echo "========================================"
-echo ""
-composer install
-if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Ошибка при установке зависимостей PHP!${NC}"
+if ! command_exists node; then
+    print_error "Node.js не установлен"
     exit 1
 fi
-echo -e "${GREEN}✓ Зависимости PHP установлены${NC}"
 
-echo ""
-echo "========================================"
-echo "  Установка зависимостей Node.js (NPM)"
-echo "========================================"
-echo ""
-npm install
-if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Ошибка при установке зависимостей Node.js!${NC}"
+if ! command_exists composer; then
+    print_error "Composer не установлен"
     exit 1
 fi
-echo -e "${GREEN}✓ Зависимости Node.js установлены${NC}"
 
-# Настройка .env
+if ! command_exists npm; then
+    print_error "NPM не установлен"
+    exit 1
+fi
+
+print_success "Все необходимые инструменты готовы"
+
+# ============================================
+# Установка зависимостей
+# ============================================
 echo ""
-echo "========================================"
-echo "  Настройка переменных окружения"
-echo "========================================"
+print_status "Установка PHP зависимостей..."
+composer install --no-interaction -q
+print_success "PHP зависимости установлены"
+
 echo ""
+print_status "Установка Node.js зависимостей..."
+npm install --silent
+print_success "Node.js зависимости установлены"
+
+# ============================================
+# Конфигурация
+# ============================================
+echo ""
+print_status "Настройка приложения..."
+
 if [ ! -f ".env" ]; then
     if [ -f ".env.example" ]; then
         cp .env.example .env
-        echo "Создан файл .env из .env.example"
     else
-        echo "Создание файла .env с настройками по умолчанию..."
         cat > .env << 'EOF'
 APP_NAME=Tomodoro
 APP_ENV=local
@@ -264,81 +225,45 @@ APP_URL=http://localhost:8000
 APP_TIMEZONE=Europe/Moscow
 
 DB_CONNECTION=sqlite
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=tomodoro
-DB_USERNAME=root
-DB_PASSWORD=
+DB_DATABASE=database/database.sqlite
 
-MAIL_MAILER=smtp
-MAIL_HOST=smtp.mailtrap.io
-MAIL_PORT=587
-MAIL_USERNAME=
-MAIL_PASSWORD=
-MAIL_ENCRYPTION=tls
-MAIL_FROM_ADDRESS=admin@tomodoro.local
+CACHE_DRIVER=file
+SESSION_DRIVER=file
+QUEUE_CONNECTION=sync
 EOF
     fi
 fi
-echo -e "${GREEN}✓ Файл .env готов${NC}"
 
-# Генерация ключа приложения
-echo ""
-echo "========================================"
-echo "  Генерация ключа приложения"
-echo "========================================"
-echo ""
-php artisan key:generate
-if [ $? -ne 0 ]; then
-    echo -e "${YELLOW}⚠ Внимание: ошибка при генерации ключа${NC}"
-fi
+print_success "Конфиг готов"
 
-# Подготовка БД
+# ============================================
+# Инициализация приложения
+# ============================================
 echo ""
-echo "========================================"
-echo "  Подготовка базы данных"
-echo "========================================"
-echo ""
+print_status "Генерация ключа приложения..."
+php artisan key:generate --force >/dev/null 2>&1
+
+print_status "Подготовка БД..."
 mkdir -p database
-if [ ! -f "database/database.sqlite" ]; then
-    echo "Создание файла БД..."
-    touch database/database.sqlite
-fi
+touch database/database.sqlite 2>/dev/null
 
-# Миграции БД
-echo ""
-echo "========================================"
-echo "  Запуск миграций БД"
-echo "========================================"
-echo ""
-php artisan migrate --force
-if [ $? -ne 0 ]; then
-    echo -e "${YELLOW}⚠ Внимание: ошибка при выполнении миграций${NC}"
-    echo "Проверьте настройки БД в файле .env"
-fi
+print_status "Запуск миграций..."
+php artisan migrate --force --no-interaction >/dev/null 2>&1
 
-# Сборка фронтенда
-echo ""
-echo "========================================"
-echo "  Сборка фронтенда"
-echo "========================================"
-echo ""
-npm run build
-if [ $? -ne 0 ]; then
-    echo -e "${YELLOW}⚠ Внимание: ошибка при сборке фронтенда${NC}"
-fi
+print_status "Сборка фронтенда..."
+npm run build >/dev/null 2>&1
 
+# ============================================
+# Готово
+# ============================================
 echo ""
-echo "========================================"
-echo "  Установка завершена!"
-echo "========================================"
+echo "███████████████████████████████████████████"
+echo "  ✓ Установка завершена!"
+echo "███████████████████████████████████████████"
 echo ""
-echo "Запуск приложения..."
+print_status "Запуск приложения..."
 echo ""
-echo "Откройте в браузере: http://localhost:8000"
-echo ""
-echo "Для остановки сервера нажмите Ctrl+C"
+echo "🌐 Откройте в браузере: http://localhost:8000"
 echo ""
 
-# Запуск сервера
 php artisan serve

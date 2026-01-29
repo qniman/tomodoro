@@ -2,173 +2,150 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-echo ===============================================
-echo   Полная установка приложения Tomodoro
-echo ===============================================
+color 0A
+cls
+
+echo.
+echo ███████████████████████████████████████████
+echo   TOMODORO - Автоматическая установка
+echo ███████████████████████████████████████████
 echo.
 
 REM Проверка прав администратора
 net session >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ❌ Требуются права администратора!
-    echo Пожалуйста, запустите скрипт от имени администратора
-    pause
+    echo [!] Запуск от имени администратора...
+    powershell -Command "Start-Process cmd.exe -ArgumentList '/c %~s0' -Verb RunAs"
     exit /b 1
 )
 
-REM Проверка Chocolatey
-echo Проверка Chocolatey...
+setlocal
+cd /d "%~dp0"
+
+REM Переменные для путей установки
+set CHOCO_INSTALLED=0
+set NEEDS_PATH_UPDATE=0
+
+REM ============================================
+REM Установка Chocolatey
+REM ============================================
+echo [*] Проверка Chocolatey...
 choco --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo.
-    echo ===============================================
-    echo   Установка Chocolatey
-    echo ===============================================
-    echo Chocolatey не найден. Установка...
-    echo.
+    echo [!] Установка Chocolatey...
     @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command "[System.Net.ServicePointManager]::SecurityProtocol = 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
-    if %errorlevel% neq 0 (
-        echo ❌ Ошибка при установке Chocolatey
-        pause
-        exit /b 1
-    )
-    echo ✓ Chocolatey установлен
+    set CHOCO_INSTALLED=1
+) else (
+    echo [✓] Chocolatey уже установлен
 )
-echo ✓ Chocolatey найден
 
-REM Проверка и установка PHP
+REM Обновляем PATH
+set "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
+
+REM ============================================
+REM Установка PHP
+REM ============================================
 echo.
-echo ===============================================
-echo   Проверка и установка PHP
-echo ===============================================
+echo [*] Проверка PHP...
 php -v >nul 2>&1
 if %errorlevel% neq 0 (
-    echo PHP не найден. Установка PHP 8.2...
-    choco install php --version=8.2.0 -y
-    if %errorlevel% neq 0 (
-        echo ❌ Ошибка при установке PHP
-        pause
-        exit /b 1
+    echo [!] Установка PHP 8.2...
+    choco install php --version=8.2.13 -y -f
+    set NEEDS_PATH_UPDATE=1
+    REM Обновляем PATH для PHP
+    for /f "delims=" %%A in ('choco list php --local ^| find "php"') do (
+        setx PATH "%PATH%;C:\tools\php82"
     )
-    echo ✓ PHP установлен
-    REM Обновляем PATH
     set "PATH=%PATH%;C:\tools\php82"
 ) else (
-    echo ✓ PHP уже установлен
-    php -v | findstr /R ".*"
+    echo [✓] PHP найден
+    php -v | findstr /R ".*" | findstr /v "^$"
 )
 
-REM Проверка и установка Node.js
+REM ============================================
+REM Установка Node.js
+REM ============================================
 echo.
-echo ===============================================
-echo   Проверка и установка Node.js
-echo ===============================================
+echo [*] Проверка Node.js...
 node -v >nul 2>&1
 if %errorlevel% neq 0 (
-    echo Node.js не найден. Установка Node.js LTS...
-    choco install nodejs --version=20.10.0 -y
-    if %errorlevel% neq 0 (
-        echo ❌ Ошибка при установке Node.js
-        pause
-        exit /b 1
-    )
-    echo ✓ Node.js установлен
-    REM Обновляем PATH
+    echo [!] Установка Node.js...
+    choco install nodejs --version=20.10.0 -y -f
+    set NEEDS_PATH_UPDATE=1
     set "PATH=%PATH%;C:\Program Files\nodejs"
 ) else (
-    echo ✓ Node.js уже установлен
+    echo [✓] Node.js найден
     node -v
 )
 
-REM Проверка NPM
-npm -v >nul 2>&1
-if %errorlevel% neq 0 (
-    echo ❌ NPM не найден
-    pause
-    exit /b 1
-)
-
-REM Проверка и установка Composer
+REM ============================================
+REM Установка Composer
+REM ============================================
 echo.
-echo ===============================================
-echo   Проверка и установка Composer
-echo ===============================================
+echo [*] Проверка Composer...
 composer --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo Composer не найден. Установка Composer...
-    choco install composer -y
-    if %errorlevel% neq 0 (
-        echo ❌ Ошибка при установке Composer
-        pause
-        exit /b 1
-    )
-    echo ✓ Composer установлен
-    REM Обновляем PATH
+    echo [!] Установка Composer...
+    choco install composer -y -f
+    set NEEDS_PATH_UPDATE=1
     set "PATH=%PATH%;C:\ProgramData\ComposerSetup\bin"
 ) else (
-    echo ✓ Composer уже установлен
+    echo [✓] Composer найден
     composer --version | findstr /R ".*"
 )
 
-REM Проверка и установка Git
+REM ============================================
+REM Проверка NPM
+REM ============================================
 echo.
-echo ===============================================
-echo   Проверка и установка Git
-echo ===============================================
-git --version >nul 2>&1
+echo [*] Проверка NPM...
+npm -v >nul 2>&1
 if %errorlevel% neq 0 (
-    echo Git не найден. Установка Git...
-    choco install git -y
-    if %errorlevel% neq 0 (
-        echo ❌ Ошибка при установке Git
-        pause
-        exit /b 1
-    )
-    echo ✓ Git установлен
-    set "PATH=%PATH%;C:\Program Files\Git\cmd"
-) else (
-    echo ✓ Git уже установлен
-    git --version | findstr /R ".*"
-)
-
-echo.
-echo ===============================================
-echo   Установка зависимостей PHP (Composer)
-echo ===============================================
-echo.
-composer install
-if %errorlevel% neq 0 (
-    echo ❌ Ошибка при установке зависимостей PHP!
-    pause
+    echo [✗] NPM не найден
     exit /b 1
 )
-echo ✓ Зависимости PHP установлены
+echo [✓] NPM найден
+
+REM ============================================
+REM Обновление переменных окружения если нужно
+REM ============================================
+if %NEEDS_PATH_UPDATE% equ 1 (
+    echo.
+    echo [!] Обновление переменных окружения...
+    call refreshenv.cmd
+)
+
+REM ============================================
+REM Установка зависимостей
+REM ============================================
+echo.
+echo [*] Установка зависимостей PHP...
+call composer install --no-interaction
+if %errorlevel% neq 0 (
+    echo [✗] Ошибка установки PHP зависимостей
+    exit /b 1
+)
+echo [✓] PHP зависимости установлены
 
 echo.
-echo ===============================================
-echo   Установка зависимостей Node.js (NPM)
-echo ===============================================
-echo.
+echo [*] Установка зависимостей Node.js...
 call npm install
 if %errorlevel% neq 0 (
-    echo ❌ Ошибка при установке зависимостей Node.js!
-    pause
+    echo [✗] Ошибка установки Node.js зависимостей
     exit /b 1
 )
-echo ✓ Зависимости Node.js установлены
+echo [✓] Node.js зависимости установлены
 
-REM Проверка файла .env
+REM ============================================
+REM Конфигурация приложения
+REM ============================================
 echo.
-echo ===============================================
-echo   Настройка переменных окружения
-echo ===============================================
-echo.
+echo [*] Настройка приложения...
+
 if not exist ".env" (
     if exist ".env.example" (
-        echo Создание файла .env из .env.example...
-        copy .env.example .env
+        copy .env.example .env >nul
     ) else (
-        echo Создание файла .env с настройками по умолчанию...
         (
             echo APP_NAME=Tomodoro
             echo APP_ENV=local
@@ -177,82 +154,48 @@ if not exist ".env" (
             echo APP_TIMEZONE=Europe/Moscow
             echo.
             echo DB_CONNECTION=sqlite
-            echo DB_HOST=127.0.0.1
-            echo DB_PORT=3306
-            echo DB_DATABASE=tomodoro
-            echo DB_USERNAME=root
-            echo DB_PASSWORD=
+            echo DB_DATABASE=database/database.sqlite
             echo.
-            echo MAIL_MAILER=smtp
-            echo MAIL_HOST=smtp.mailtrap.io
-            echo MAIL_PORT=587
-            echo MAIL_USERNAME=
-            echo MAIL_PASSWORD=
-            echo MAIL_ENCRYPTION=tls
-            echo MAIL_FROM_ADDRESS=admin@tomodoro.local
+            echo CACHE_DRIVER=file
+            echo SESSION_DRIVER=file
+            echo QUEUE_CONNECTION=sync
         ) > .env
     )
 )
-echo ✓ Файл .env готов
 
-REM Генерация ключа приложения
-echo.
-echo ===============================================
-echo   Генерация ключа приложения
-echo ===============================================
-echo.
-call php artisan key:generate
-if %errorlevel% neq 0 (
-    echo ⚠ Внимание: ошибка при генерации ключа
-)
+echo [✓] Конфиг приложения готов
 
-REM Создание БД
+REM ============================================
+REM Инициализация приложения
+REM ============================================
 echo.
-echo ===============================================
-echo   Подготовка базы данных
-echo ===============================================
-echo.
+echo [*] Генерация ключа приложения...
+php artisan key:generate --force >nul 2>&1
+
+echo [*] Подготовка БД...
+if not exist "database" mkdir database
 if not exist "database\database.sqlite" (
-    echo Создание файла БД...
     type nul > database\database.sqlite
 )
 
-REM Миграции БД
-echo.
-echo ===============================================
-echo   Запуск миграций БД
-echo ===============================================
-echo.
-call php artisan migrate --force
-if %errorlevel% neq 0 (
-    echo ⚠ Внимание: ошибка при выполнении миграций
-    echo Проверьте настройки БД в файле .env
-)
+echo [*] Запуск миграций...
+php artisan migrate --force --no-interaction >nul 2>&1
 
-REM Сборка фронтенда
-echo.
-echo ===============================================
-echo   Сборка фронтенда
-echo ===============================================
-echo.
-call npm run build
-if %errorlevel% neq 0 (
-    echo ⚠ Внимание: ошибка при сборке фронтенда
-)
+echo [*] Сборка фронтенда...
+npm run build >nul 2>&1
 
+REM ============================================
+REM Готово
+REM ============================================
 echo.
-echo ===============================================
-echo   Установка завершена!
-echo ===============================================
+echo ███████████████████████████████████████████
+echo   ✓ Установка завершена!
+echo ███████████████████████████████████████████
 echo.
-echo Запуск приложения...
+echo [►] Запуск приложения...
 echo.
-echo Откройте в браузере: http://localhost:8000
-echo.
-echo Для остановки сервера нажмите Ctrl+C
+echo 🌐 Откройте в браузере: http://localhost:8000
 echo.
 
-REM Запуск сервера
-call php artisan serve
+php artisan serve
 
-pause
