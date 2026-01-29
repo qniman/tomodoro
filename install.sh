@@ -271,6 +271,24 @@ fi
 print_success "NPM готов"
 
 # ============================================
+# Подготовка Laravel директорий
+# ============================================
+echo ""
+print_status "Подготовка директорий приложения..."
+
+# Создаем требуемые директории для Laravel
+mkdir -p bootstrap/cache
+mkdir -p storage/app
+mkdir -p storage/logs
+mkdir -p storage/framework/{cache,sessions,views}
+mkdir -p database
+
+# Убедимся что директории имеют правильные права
+chmod -R 755 bootstrap storage database 2>/dev/null || true
+
+print_success "Директории подготовлены"
+
+# ============================================
 # Установка зависимостей
 # ============================================
 echo ""
@@ -281,13 +299,15 @@ COMPOSER_EXIT=${PIPESTATUS[0]}
 if [ $COMPOSER_EXIT -ne 0 ]; then
     echo ""
     print_error "Ошибка установки PHP зависимостей."
-    echo "Лог ошибки:"
-    cat /tmp/composer.log
     echo ""
-    print_error "Проверьте:"
-    echo "  1. Все ли PHP расширения установлены? (php -m)"
-    echo "  2. Версия PHP совместима? (php -v)"
-    echo "  3. Достаточно памяти? (free -h)"
+    echo "Проверьте:"
+    echo "  1. PHP расширения: php -m | grep -E 'xml|dom|curl|mbstring|zip'"
+    echo "  2. Права доступа: ls -la bootstrap/cache storage/"
+    echo "  3. Память: free -h"
+    echo "  4. Место на диске: df -h"
+    echo ""
+    echo "Последние ошибки:"
+    tail -30 /tmp/composer.log
     exit 1
 fi
 print_success "PHP зависимости установлены"
@@ -338,16 +358,40 @@ print_success "Конфиг готов"
 # ============================================
 # Инициализация приложения
 # ============================================
+# Инициализация приложения
+# ============================================
 echo ""
-print_status "Генерация ключа приложения..."
-php artisan key:generate --force || print_error "Ошибка генерации ключа"
+print_status "Финальная подготовка..."
 
-print_status "Подготовка БД..."
-mkdir -p database
-touch database/database.sqlite 2>/dev/null || true
+# Убедимся что все директории существуют и имеют правильные права
+mkdir -p bootstrap/cache storage/app storage/logs storage/framework/{cache,sessions,views} database
+
+# Давим на права (т.к. уже создали выше, но убедимся еще раз)
+chmod -R 755 bootstrap storage database 2>/dev/null || true
+
+# Создаем SQLite БД если её нет
+if [ ! -f database/database.sqlite ]; then
+    touch database/database.sqlite
+    chmod 644 database/database.sqlite
+fi
+
+print_status "Генерация ключа приложения..."
+php artisan key:generate --force 2>&1 | tee /tmp/artisan-key.log
+KEY_EXIT=$?
+if [ $KEY_EXIT -ne 0 ]; then
+    print_error "Ошибка генерации ключа"
+    tail -20 /tmp/artisan-key.log
+    exit 1
+fi
 
 print_status "Запуск миграций..."
-php artisan migrate --force --no-interaction || print_error "Ошибка выполнения миграций"
+php artisan migrate --force --no-interaction 2>&1 | tee /tmp/artisan-migrate.log
+MIGRATE_EXIT=$?
+if [ $MIGRATE_EXIT -ne 0 ]; then
+    print_error "Ошибка выполнения миграций"
+    tail -20 /tmp/artisan-migrate.log
+    exit 1
+fi
 
 print_status "Сборка фронтенда..."
 npm run build 2>&1 | tee /tmp/npm-build.log
