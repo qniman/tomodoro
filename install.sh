@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e  # Прерывать при любой ошибке
+
 echo ""
 echo "███████████████████████████████████████████"
 echo "  TOMODORO - Автоматическая установка"
@@ -28,11 +30,15 @@ print_success() {
 
 print_error() {
     echo -e "${RED}[✗]${NC} $1"
+    exit 1
 }
 
 print_warning() {
     echo -e "${YELLOW}[!]${NC} $1"
 }
+
+# Trap для ошибок
+trap 'print_error "Ошибка установки на шаге: $BASH_COMMAND"' ERR
 
 # Определение ОС
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -49,11 +55,11 @@ fi
 # ============================================
 install_debian() {
     print_status "Обновление репозиториев..."
-    sudo apt-get update -qq
+    sudo apt-get update -qq || print_error "Ошибка обновления репозиториев"
 
     if ! command_exists php; then
         print_status "Установка PHP 8.2..."
-        sudo apt-get install -y -qq php8.2-cli php8.2-fpm php8.2-sqlite3 php8.2-curl php8.2-xml php8.2-mbstring php8.2-zip php8.2-intl >/dev/null 2>&1
+        sudo apt-get install -y php8.2-cli php8.2-fpm php8.2-sqlite3 php8.2-curl php8.2-xml php8.2-mbstring php8.2-zip php8.2-intl php8.2-dev || print_error "Ошибка установки PHP"
         print_success "PHP установлен"
     else
         print_success "PHP уже установлен"
@@ -61,17 +67,25 @@ install_debian() {
 
     if ! command_exists node; then
         print_status "Установка Node.js..."
-        curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - >/dev/null 2>&1
-        sudo apt-get install -y -qq nodejs >/dev/null 2>&1
+        curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - >/dev/null 2>&1 || print_error "Ошибка добавления репозитория Node.js"
+        sudo apt-get install -y nodejs >/dev/null 2>&1 || print_error "Ошибка установки Node.js"
         print_success "Node.js установлен"
     else
         print_success "Node.js уже установлен"
     fi
 
+    if ! command_exists npm; then
+        print_status "Установка NPM..."
+        sudo apt-get install -y npm >/dev/null 2>&1 || print_error "Ошибка установки NPM"
+        print_success "NPM установлен"
+    else
+        print_success "NPM уже установлен"
+    fi
+
     if ! command_exists composer; then
         print_status "Установка Composer..."
-        curl -sS https://getcomposer.org/installer | php >/dev/null 2>&1
-        sudo mv composer.phar /usr/local/bin/composer >/dev/null 2>&1
+        curl -sS https://getcomposer.org/installer | php >/dev/null 2>&1 || print_error "Ошибка загрузки Composer"
+        sudo mv composer.phar /usr/local/bin/composer >/dev/null 2>&1 || print_error "Ошибка перемещения Composer"
         sudo chmod +x /usr/local/bin/composer >/dev/null 2>&1
         print_success "Composer установлен"
     else
@@ -84,11 +98,11 @@ install_debian() {
 # ============================================
 install_redhat() {
     print_status "Обновление пакетов..."
-    sudo yum update -y -q >/dev/null 2>&1
+    sudo yum update -y -q >/dev/null 2>&1 || print_error "Ошибка обновления пакетов"
 
     if ! command_exists php; then
         print_status "Установка PHP 8.2..."
-        sudo yum install -y -q php php-cli php-fpm php-sqlite php-curl php-xml php-mbstring php-zip php-intl >/dev/null 2>&1
+        sudo yum install -y php php-cli php-fpm php-sqlite php-curl php-xml php-mbstring php-zip php-intl php-devel >/dev/null 2>&1 || print_error "Ошибка установки PHP"
         print_success "PHP установлен"
     else
         print_success "PHP уже установлен"
@@ -96,17 +110,25 @@ install_redhat() {
 
     if ! command_exists node; then
         print_status "Установка Node.js..."
-        curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash - >/dev/null 2>&1
-        sudo yum install -y -q nodejs >/dev/null 2>&1
+        curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash - >/dev/null 2>&1 || print_error "Ошибка добавления репозитория Node.js"
+        sudo yum install -y nodejs >/dev/null 2>&1 || print_error "Ошибка установки Node.js"
         print_success "Node.js установлен"
     else
         print_success "Node.js уже установлен"
     fi
 
+    if ! command_exists npm; then
+        print_status "Установка NPM..."
+        sudo yum install -y npm >/dev/null 2>&1 || print_error "Ошибка установки NPM"
+        print_success "NPM установлен"
+    else
+        print_success "NPM уже установлен"
+    fi
+
     if ! command_exists composer; then
         print_status "Установка Composer..."
-        curl -sS https://getcomposer.org/installer | php >/dev/null 2>&1
-        sudo mv composer.phar /usr/local/bin/composer >/dev/null 2>&1
+        curl -sS https://getcomposer.org/installer | php >/dev/null 2>&1 || print_error "Ошибка загрузки Composer"
+        sudo mv composer.phar /usr/local/bin/composer >/dev/null 2>&1 || print_error "Ошибка перемещения Composer"
         sudo chmod +x /usr/local/bin/composer >/dev/null 2>&1
         print_success "Composer установлен"
     else
@@ -120,12 +142,12 @@ install_redhat() {
 install_macos() {
     if ! command_exists brew; then
         print_status "Установка Homebrew..."
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" >/dev/null 2>&1
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" >/dev/null 2>&1 || print_error "Ошибка установки Homebrew"
     fi
 
     if ! command_exists php; then
         print_status "Установка PHP..."
-        brew install php >/dev/null 2>&1
+        brew install php >/dev/null 2>&1 || print_error "Ошибка установки PHP"
         print_success "PHP установлен"
     else
         print_success "PHP уже установлен"
@@ -133,15 +155,23 @@ install_macos() {
 
     if ! command_exists node; then
         print_status "Установка Node.js..."
-        brew install node >/dev/null 2>&1
+        brew install node >/dev/null 2>&1 || print_error "Ошибка установки Node.js"
         print_success "Node.js установлен"
     else
         print_success "Node.js уже установлен"
     fi
 
+    if ! command_exists npm; then
+        print_status "Установка NPM..."
+        brew install npm >/dev/null 2>&1 || print_error "Ошибка установки NPM"
+        print_success "NPM установлен"
+    else
+        print_success "NPM уже установлен"
+    fi
+
     if ! command_exists composer; then
         print_status "Установка Composer..."
-        brew install composer >/dev/null 2>&1
+        brew install composer >/dev/null 2>&1 || print_error "Ошибка установки Composer"
         print_success "Composer установлен"
     else
         print_success "Composer уже установлен"
@@ -174,37 +204,45 @@ print_status "Финальная проверка..."
 
 if ! command_exists php; then
     print_error "PHP не установлен"
-    exit 1
 fi
+print_success "PHP готов"
 
 if ! command_exists node; then
     print_error "Node.js не установлен"
-    exit 1
 fi
+print_success "Node.js готов"
 
 if ! command_exists composer; then
     print_error "Composer не установлен"
-    exit 1
 fi
+print_success "Composer готов"
 
 if ! command_exists npm; then
     print_error "NPM не установлен"
-    exit 1
 fi
-
-print_success "Все необходимые инструменты готовы"
+print_success "NPM готов"
 
 # ============================================
 # Установка зависимостей
 # ============================================
 echo ""
 print_status "Установка PHP зависимостей..."
-composer install --no-interaction -q
+composer install --no-interaction 2>&1 | tee /tmp/composer.log || {
+    echo ""
+    print_error "Ошибка установки PHP зависимостей."
+    echo "Лог ошибки:"
+    cat /tmp/composer.log
+}
 print_success "PHP зависимости установлены"
 
 echo ""
 print_status "Установка Node.js зависимостей..."
-npm install --silent
+npm install 2>&1 | tee /tmp/npm.log || {
+    echo ""
+    print_error "Ошибка установки Node.js зависимостей."
+    echo "Лог ошибки:"
+    cat /tmp/npm.log
+}
 print_success "Node.js зависимости установлены"
 
 # ============================================
@@ -241,17 +279,22 @@ print_success "Конфиг готов"
 # ============================================
 echo ""
 print_status "Генерация ключа приложения..."
-php artisan key:generate --force >/dev/null 2>&1
+php artisan key:generate --force || print_error "Ошибка генерации ключа"
 
 print_status "Подготовка БД..."
 mkdir -p database
-touch database/database.sqlite 2>/dev/null
+touch database/database.sqlite 2>/dev/null || true
 
 print_status "Запуск миграций..."
-php artisan migrate --force --no-interaction >/dev/null 2>&1
+php artisan migrate --force --no-interaction || print_error "Ошибка выполнения миграций"
 
 print_status "Сборка фронтенда..."
-npm run build >/dev/null 2>&1
+npm run build 2>&1 | tee /tmp/npm-build.log || {
+    echo ""
+    print_error "Ошибка сборки фронтенда"
+    echo "Лог ошибки:"
+    cat /tmp/npm-build.log
+}
 
 # ============================================
 # Готово

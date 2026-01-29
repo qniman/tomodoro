@@ -74,7 +74,7 @@ chmod +x install.sh && ./install.sh
 
 **Затем откройте**: http://localhost:8000
 
-Подробнее: [QUICK_SETUP.md](docs/QUICK_SETUP.md)
+**📖 Детально**: [INSTALL.md](INSTALL.md) | [QUICK_SETUP.md](docs/QUICK_SETUP.md)
 
 ---
 
