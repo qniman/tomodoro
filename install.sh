@@ -57,21 +57,39 @@ install_debian() {
     print_status "Обновление репозиториев..."
     sudo apt-get update -qq || print_error "Ошибка обновления репозиториев"
 
+    # Проверяем версию PHP
+    PHP_VERSION=$(php -v 2>/dev/null | grep -oP 'PHP \K[0-9]+\.[0-9]+' | head -1)
+    
     if ! command_exists php; then
-        print_status "Установка PHP 8.2..."
-        sudo apt-get install -y php8.2-cli php8.2-fpm php8.2-sqlite3 php8.2-curl php8.2-xml php8.2-mbstring php8.2-zip php8.2-intl php8.2-dev || print_error "Ошибка установки PHP"
+        print_status "Установка PHP 8.3..."
+        sudo apt-get install -y php8.3-cli php8.3-fpm php8.3-sqlite3 php8.3-curl php8.3-xml php8.3-dom php8.3-mbstring php8.3-zip php8.3-intl php8.3-dev 2>&1 | tail -5 || print_error "Ошибка установки PHP"
         print_success "PHP установлен"
     else
-        print_success "PHP уже установлен"
+        print_success "PHP уже установлен (версия: $PHP_VERSION)"
+        # Убедимся что установлены нужные расширения
+        if ! php -m | grep -q xml; then
+            print_status "Установка недостающих PHP расширений..."
+            sudo apt-get install -y php${PHP_VERSION}-xml php${PHP_VERSION}-dom 2>&1 | tail -5 || print_error "Ошибка установки PHP расширений"
+            print_success "PHP расширения установлены"
+        fi
     fi
 
     if ! command_exists node; then
-        print_status "Установка Node.js..."
+        print_status "Установка Node.js 20 LTS..."
         curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - >/dev/null 2>&1 || print_error "Ошибка добавления репозитория Node.js"
         sudo apt-get install -y nodejs >/dev/null 2>&1 || print_error "Ошибка установки Node.js"
         print_success "Node.js установлен"
     else
-        print_success "Node.js уже установлен"
+        NODE_VERSION=$(node -v)
+        print_success "Node.js уже установлен ($NODE_VERSION)"
+        # Проверяем версию
+        NODE_MAJOR=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
+        if [ "$NODE_MAJOR" -lt 20 ]; then
+            print_warning "Node.js версия $NODE_MAJOR < 20. Обновляем..."
+            curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - >/dev/null 2>&1 || print_error "Ошибка добавления репозитория Node.js"
+            sudo apt-get install -y nodejs >/dev/null 2>&1 || print_error "Ошибка обновления Node.js"
+            print_success "Node.js обновлен на версию $(node -v)"
+        fi
     fi
 
     if ! command_exists npm; then
@@ -207,10 +225,40 @@ if ! command_exists php; then
 fi
 print_success "PHP готов"
 
+# Проверяем требуемые расширения
+REQUIRED_EXTENSIONS=("xml" "dom" "curl" "mbstring" "zip")
+MISSING_EXTENSIONS=()
+
+for ext in "${REQUIRED_EXTENSIONS[@]}"; do
+    if ! php -m | grep -qi "^$ext$"; then
+        MISSING_EXTENSIONS+=("$ext")
+    fi
+done
+
+if [ ${#MISSING_EXTENSIONS[@]} -gt 0 ]; then
+    print_warning "Отсутствуют PHP расширения: ${MISSING_EXTENSIONS[*]}"
+    print_status "Установка недостающих расширений..."
+    PHP_VERSION=$(php -v | grep -oP 'PHP \K[0-9]+\.[0-9]+' | head -1)
+    sudo apt-get update -qq
+    for ext in "${MISSING_EXTENSIONS[@]}"; do
+        print_status "  Установка php${PHP_VERSION}-$ext..."
+        sudo apt-get install -y php${PHP_VERSION}-${ext} >/dev/null 2>&1 || print_warning "Не удалось установить php-$ext"
+    done
+    print_success "Расширения установлены"
+fi
+
 if ! command_exists node; then
     print_error "Node.js не установлен"
 fi
-print_success "Node.js готов"
+NODE_VERSION=$(node -v)
+NODE_MAJOR=$(echo $NODE_VERSION | cut -d'v' -f2 | cut -d'.' -f1)
+if [ "$NODE_MAJOR" -lt 20 ]; then
+    print_warning "Node.js версия $NODE_VERSION < 20. Обновляем для совместимости..."
+    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - >/dev/null 2>&1
+    sudo apt-get install -y nodejs >/dev/null 2>&1 || print_error "Ошибка обновления Node.js"
+    NODE_VERSION=$(node -v)
+fi
+print_success "Node.js готов ($NODE_VERSION)"
 
 if ! command_exists composer; then
     print_error "Composer не установлен"
@@ -227,22 +275,35 @@ print_success "NPM готов"
 # ============================================
 echo ""
 print_status "Установка PHP зависимостей..."
-composer install --no-interaction 2>&1 | tee /tmp/composer.log || {
+composer install --no-interaction 2>&1 | tee /tmp/composer.log
+COMPOSER_EXIT=${PIPESTATUS[0]}
+
+if [ $COMPOSER_EXIT -ne 0 ]; then
     echo ""
     print_error "Ошибка установки PHP зависимостей."
     echo "Лог ошибки:"
     cat /tmp/composer.log
-}
+    echo ""
+    print_error "Проверьте:"
+    echo "  1. Все ли PHP расширения установлены? (php -m)"
+    echo "  2. Версия PHP совместима? (php -v)"
+    echo "  3. Достаточно памяти? (free -h)"
+    exit 1
+fi
 print_success "PHP зависимости установлены"
 
 echo ""
 print_status "Установка Node.js зависимостей..."
-npm install 2>&1 | tee /tmp/npm.log || {
+npm install 2>&1 | tee /tmp/npm.log
+NPM_EXIT=${PIPESTATUS[0]}
+
+if [ $NPM_EXIT -ne 0 ]; then
     echo ""
     print_error "Ошибка установки Node.js зависимостей."
     echo "Лог ошибки:"
-    cat /tmp/npm.log
-}
+    tail -20 /tmp/npm.log
+    exit 1
+fi
 print_success "Node.js зависимости установлены"
 
 # ============================================
@@ -289,12 +350,17 @@ print_status "Запуск миграций..."
 php artisan migrate --force --no-interaction || print_error "Ошибка выполнения миграций"
 
 print_status "Сборка фронтенда..."
-npm run build 2>&1 | tee /tmp/npm-build.log || {
+npm run build 2>&1 | tee /tmp/npm-build.log
+BUILD_EXIT=${PIPESTATUS[0]}
+
+if [ $BUILD_EXIT -ne 0 ]; then
     echo ""
     print_error "Ошибка сборки фронтенда"
     echo "Лог ошибки:"
-    cat /tmp/npm-build.log
-}
+    tail -30 /tmp/npm-build.log
+    exit 1
+fi
+print_success "Фронтенд собран"
 
 # ============================================
 # Готово
