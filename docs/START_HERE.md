@@ -1,122 +1,243 @@
 # 🚀 Начните отсюда
 
-## ⚡ One-Liner Setup - выберите вашу ОС
+## ⚡ One-Liner Setup - Полностью Автоматическая Установка
 
-### 🍎 macOS
+Просто скопируйте и выполните одну команду. Скрипт сделает всё остальное, **даже если ничего не установлено**.
+
+### 🍎 macOS (с Homebrew или без)
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/yourusername/tomodoro/main/install-unix.sh)
 ```
+✅ Установит Homebrew (если нужно)  
+✅ Установит PHP, Node.js, Composer  
+✅ Установит зависимости проекта  
+✅ Запустит сервер  
 
-### 🐧 Linux (Ubuntu/Debian/Fedora/Arch)
+### 🐧 Linux (Ubuntu/Debian/Fedora/Arch/CentOS)
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/yourusername/tomodoro/main/install-unix.sh)
 ```
+✅ Установит PHP, Node.js, Composer (при помощи sudo)  
+✅ Установит все необходимые библиотеки  
+✅ Установит зависимости проекта  
+✅ Запустит сервер  
 
-### 🪟 Windows (PowerShell as Admin)
+### 🪟 Windows (PowerShell 5.1+)
 ```powershell
+# Откройте PowerShell как администратор (правый клик → "Run as administrator")
 powershell -ExecutionPolicy Bypass -File install-windows.ps1
 ```
-
-**Готово!** Откройте **http://localhost:8000** 🎉
-
----
-
-## 📋 Что будет установлено?
-
-Скрипт автоматически установит и настроит:
-- ✅ PHP 8.2+, Node.js 20+, Composer
-- ✅ Все зависимости проекта
-- ✅ Базу данных (SQLite)
-- ✅ Фронтенд (Vite)
-- ✅ Запустит сервер разработки
+✅ Установит Chocolatey (если нужно)  
+✅ Установит PHP, Node.js, Composer через Chocolatey  
+✅ Установит зависимости проекта  
+✅ Запустит сервер  
 
 ---
 
-## ✨ Первые шаги
+## 📋 Что будет установлено АВТОМАТИЧЕСКИ?
 
-1. **Создайте учетную запись** - регистрация на стартовой странице
-2. **Добавьте задачу** - перейдите в "Tasks" → "New Task"
-3. **Запустите таймер** - нажмите "Start" и работайте 25 минут
+| Компонент | Версия | Откуда | Зачем |
+|-----------|--------|--------|-------|
+| **PHP** | 8.2+ | Homebrew (macOS) / apt/dnf (Linux) / Chocolatey (Win) | Backend, Laravel |
+| **Node.js** | 20+ | Homebrew / apt / Chocolatey | Frontend, сборка CSS/JS |
+| **npm** | 10+ | Поставляется с Node.js | Управление JavaScript пакетами |
+| **Composer** | Latest | Homebrew / apt / Chocolatey | Управление PHP пакетами |
+| **Git** | Latest | Homebrew / apt (Linux only) | Контроль версий |
+| **SQLite** | Встроена | PHP модуль | База данных |
 
 ---
 
-## 🛠️ Полезные команды
+## 🔧 Что происходит во время установки?
+
+Процесс по шагам:
+
+```
+1. 📦 Проверка и установка инструментов
+   ✓ Проверяет наличие PHP, Node.js, Composer, Git
+   ✓ Если нет → устанавливает через пакетный менеджер
+   ✓ На macOS может попросить пароль для Homebrew
+   ✓ На Linux может попросить пароль для sudo
+
+2. 📥 Скачивание зависимостей проекта
+   ✓ composer install (скачивает PHP пакеты)
+   ✓ npm install (скачивает JavaScript пакеты)
+
+3. ⚙️ Настройка приложения
+   ✓ Создаёт .env файл
+   ✓ Генерирует APP_KEY
+   ✓ Инициализирует базу данных (SQLite)
+   ✓ Загружает тестовые данные (seeding)
+
+4. 🎨 Сборка фронтенда
+   ✓ npm run build (компилирует CSS и JavaScript)
+
+5. 🚀 Запуск сервера
+   ✓ Запускает Laravel dev сервер
+   ✓ Доступен на http://localhost:8000
+```
+
+---
+
+## ✨ После установки - первые шаги
+
+1. **Откройте браузер**: http://localhost:8000
+
+2. **Создайте аккаунт**:
+   - Нажмите кнопку "Register"
+   - Заполните email и пароль
+   - Нажмите "Sign Up"
+
+3. **Добавьте первую задачу**:
+   - Перейдите в "Tasks"
+   - Нажмите "Add Task" или "+"
+   - Введите название задачи
+   - Установите время на таймер (по умолчанию 25 мин)
+
+4. **Запустите таймер**:
+   - Перейдите на главную страницу
+   - Нажмите "Start" 
+   - Работайте в течение 25 минут
+   - Система уведомит вас об окончании
+
+---
+
+## 🛠️ Команды для разработчиков
+
+Если нужно запустить сервер заново или выполнить другие операции:
 
 ```bash
-# Запустить сервер (если остановлен)
+# Запустить сервер на порту 8000
 php artisan serve
+
+# Запустить на другом порту
+php artisan serve --port=8001
 
 # Собрать фронтенд
 npm run build
 
+# Запустить в режиме наблюдения (автосборка при изменениях)
+npm run dev
+
 # Запустить тесты
 php artisan test
 
-# Очистить кеш
+# Очистить кеш приложения
 php artisan cache:clear
+
+# Очистить все кеши
+php artisan cache:clear config:clear route:clear view:clear
+
+# Запустить миграции заново
+php artisan migrate:refresh
+
+# Сделать резервную копию БД
+cp storage/db.sqlite storage/db.sqlite.backup
 ```
 
 ---
 
-## ❌ Проблемы?
+## ⚠️ Обычные проблемы
 
-| Проблема | Решение |
-|----------|---------|
-| **Port 8000 занят** | `php artisan serve --port=8001` |
-| **Permission denied** | `chmod +x install-unix.sh` (Linux/macOS) |
-| **Execution Policy** | `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` (Windows) |
-| **PHP/Node не найдены** | Переустановите: `brew install php node` (macOS) или `apt install` (Linux) |
+### ❌ "Port 8000 is already in use"
+Порт уже используется. Решение:
+```bash
+php artisan serve --port=8001
+```
+Затем откройте http://localhost:8001
+
+### ❌ "Permission denied" (Linux/macOS)
+```bash
+chmod +x install-unix.sh
+bash install-unix.sh
+```
+
+### ❌ "Execution Policy" (Windows)
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+powershell -ExecutionPolicy Bypass -File install-windows.ps1
+```
+
+### ❌ "command not found: php/node/composer"
+После установки PATH может не обновиться. Попробуйте:
+1. Закройте и откройте терминал/PowerShell заново
+2. На Windows перезагрузитесь
+3. На macOS выполните: `eval "$(/opt/homebrew/bin/brew shellenv)"`
+
+### ❌ "sudo: command not found" (редко на macOS)
+На macOS это не должно быть нужно. Если ошибка - файл повреждён. Переустановите:
+```bash
+rm install-unix.sh
+curl -fsSL https://raw.githubusercontent.com/yourusername/tomodoro/main/install-unix.sh > install-unix.sh
+bash install-unix.sh
+```
+
+### ❌ Другая ошибка?
+Посмотрите логи:
+```bash
+# На Linux/macOS
+tail -f storage/logs/laravel.log
+
+# Windows
+Get-Content storage/logs/laravel.log -Tail 50 -Wait
+```
 
 ---
 
-## 📚 Документация
+## 📚 Дальнейшее изучение
 
-## 💡 Быстрые ссылки
-
-| Нужно | Документ |
-|------|----------|
-| Как начать? | [docs/QUICK_SETUP.md](docs/QUICK_SETUP.md) |
-| Как использовать? | [docs/USER_MANUAL.md](docs/USER_MANUAL.md) |
-| FAQ? | [docs/USER_MANUAL.md#часто-задаваемые-вопросы](docs/USER_MANUAL.md#часто-задаваемые-вопросы-faq) |
-| Требования? | [docs/SYSTEM_REQUIREMENTS.md](docs/SYSTEM_REQUIREMENTS.md) |
-| Что установить? | [docs/INSTALLATION_GUIDE.md](docs/INSTALLATION_GUIDE.md) |
-| Что не так? | [docs/INSTALLATION_GUIDE.md](docs/INSTALLATION_GUIDE.md) (диагностика) |
-| API? | [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) |
-| Архитектура? | [docs/TECHNICAL_OVERVIEW.md](docs/TECHNICAL_OVERVIEW.md) |
+| Хочу... | Читай... |
+|--------|---------|
+| 🚀 Детали установки | [QUICK_SETUP.md](QUICK_SETUP.md) |
+| 📖 Полное руководство | [USER_MANUAL.md](USER_MANUAL.md) |
+| ❓ Часто задаваемые вопросы | [USER_MANUAL.md#часто-задаваемые-вопросы-faq](USER_MANUAL.md) |
+| 🔧 Требования для продакшена | [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md) |
+| 💻 Развивать приложение | [TECHNICAL_OVERVIEW.md](TECHNICAL_OVERVIEW.md) |
+| 🔌 Использовать API | [API_DOCUMENTATION.md](API_DOCUMENTATION.md) |
+| 📋 Все документы | [INDEX.md](INDEX.md) |
 
 ---
 
-## 🎓 Основные файлы проекта
+## 💡 Pro Tips
+
+1. **Сохраняйте данные**: База данных хранится в `storage/db.sqlite`
+2. **Резервные копии**: Периодически копируйте `storage/db.sqlite`
+3. **Экспортируйте задачи**: Используйте встроенный экспорт в CSV
+4. **Горячие клавиши**: Нажмите `?` в приложении чтобы увидеть их
+5. **Режим разработки**: Используйте `npm run dev` для автоматической пересборки
+
+---
+
+## 🎓 Структура проекта
 
 ```
 tomodoro/
-├── 📄 README.md                 ← Начните отсюда!
-├── 🚀 install.bat               ← Windows установка (двойной клик)
-├── 🚀 install.sh                ← Linux/Mac установка
-├── 📦 composer.json             ← PHP зависимости
-├── 📦 package.json              ← JavaScript зависимости
+├── 📄 README.md              ← Главная страница
+├── ⚡ install-unix.sh         ← Установка для Mac/Linux
+├── ⚡ install-windows.ps1     ← Установка для Windows
+├── 📦 composer.json          ← PHP зависимости
+├── 📦 package.json           ← JavaScript зависимости
 │
-├── docs/                        ← Документация
-│   ├── 📚 INDEX.md              ← Справочник всей документации
-│   ├── 🚀 QUICK_SETUP.md        ← Быстрая установка
-│   ├── 📖 USER_MANUAL.md        ← Полное руководство
-│   ├── 📋 INSTALLATION_GUIDE.md ← Детальная установка
-│   ├── 📋 SYSTEM_REQUIREMENTS.md← Требования
-│   ├── 💻 TECHNICAL_OVERVIEW.md ← Архитектура
-│   ├── 🔌 API_DOCUMENTATION.md  ← API endpoints
-│   └── ℹ️ LICENSE_AND_SUPPORT.md ← Лицензия
+├── docs/                     ← Документация
+│   ├── 📚 INDEX.md           ← Справочник
+│   ├── 🚀 QUICK_SETUP.md     ← Быстрая установка
+│   ├── 📖 USER_MANUAL.md     ← Как использовать
+│   ├── 🔧 INSTALLATION_GUIDE.md
+│   ├── 💻 TECHNICAL_OVERVIEW.md
+│   └── 🔌 API_DOCUMENTATION.md
 │
-├── app/                        ← Исходный код
-├── config/                     ← Конфигурация
-├── database/                   ← Миграции БД
-├── resources/                  ← Frontend
-├── routes/                     ← Маршруты
-└── tests/                      ← Тесты
+├── app/                      ← Laravel приложение
+├── resources/                ← Frontend (CSS, JS, Blade)
+├── database/                 ← Миграции, seeders
+├── routes/                   ← API и Web маршруты
+└── storage/                  ← БД и логи
+    ├── db.sqlite             ← База данных
+    └── logs/
+        └── laravel.log       ← Логи приложения
 ```
 
 ---
 
-## ⏱️ Время на освоение
+## ⏱️ Примерное время на выполнение
 
 | Уровень | Время | Что прочитать |
 |---------|-------|---------------|
