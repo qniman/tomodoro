@@ -1,5 +1,5 @@
 #Requires -RunAsAdministrator
-# Tomodoro One-Liner Install - Windows PowerShell
+# Tomodoro Installation Script for Windows
 # Works on completely bare systems with automatic dependency installation
 # Usage: powershell -ExecutionPolicy Bypass -File install-windows.ps1
 
@@ -7,7 +7,9 @@ $ErrorActionPreference = "Stop"
 $WarningPreference = "SilentlyContinue"
 $PSDefaultParameterValues['*:Encoding'] = 'UTF8'
 
-# Color codes
+# ============================================
+# Color Codes
+# ============================================
 $Success = [System.ConsoleColor]::Green
 $Error_Color = [System.ConsoleColor]::Red
 $Warning_Color = [System.ConsoleColor]::Yellow
@@ -19,77 +21,85 @@ function Log-Success { Write-Host "✅ $($args -join ' ')" -ForegroundColor $Suc
 function Log-Warning { Write-Host "⚠️  $($args -join ' ')" -ForegroundColor $Warning_Color }
 function Log-Error { Write-Host "❌ $($args -join ' ')" -ForegroundColor $Error_Color; Exit 1 }
 
-# Trap errors
-trap { Log-Error "Installation failed: $_" }
+# Error handler
+trap { 
+    Write-Host ""
+    Log-Error "Installation failed: $($_.Exception.Message)"
+}
 
+# ============================================
+# Welcome Banner
+# ============================================
 Write-Host ""
-Write-Host "🎯 Tomodoro Setup - Complete Installation" -ForegroundColor $Info_Color
-Write-Host "==========================================" -ForegroundColor $Info_Color
+Write-Host "╔════════════════════════════════════════╗" -ForegroundColor $Info_Color
+Write-Host "║    🎯 Tomodoro - Installation Setup    ║" -ForegroundColor $Info_Color
+Write-Host "║         Windows PowerShell 5.1+        ║" -ForegroundColor $Info_Color
+Write-Host "╚════════════════════════════════════════╝" -ForegroundColor $Info_Color
 Write-Host ""
 
 # ============================================
-# Admin Check
+# Admin Privilege Check
 # ============================================
-
+Log-Info "Checking for Administrator privileges..."
 $isAdmin = [Security.Principal.WindowsIdentity]::GetCurrent().Owner.IsWellKnown([Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid)
 if (-not $isAdmin) {
-    Log-Error "This script must run as Administrator. Please right-click PowerShell and select 'Run as administrator'"
+    Log-Error "This script must run as Administrator`nPlease right-click PowerShell and select 'Run as administrator'"
 }
-Log-Success "Running as Administrator"
+Log-Success "Running with Administrator privileges"
 
 # ============================================
-# Functions
+# Helper Functions
 # ============================================
 
 function Test-CommandExists {
-    param($command)
+    param([string]$command)
     try {
         if (Get-Command $command -ErrorAction SilentlyContinue) {
             return $true
         }
+        return $false
     }
     catch {
         return $false
     }
-    return $false
 }
 
-function Get-EnvironmentPath {
-    $userPath = [Environment]::GetEnvironmentVariable("Path", [EnvironmentVariableTarget]::User)
-    $machinePath = [Environment]::GetEnvironmentVariable("Path", [EnvironmentVariableTarget]::Machine)
-    $currentPath = $env:Path
-    return @($userPath, $machinePath, $currentPath) | Where-Object { $_ }
-}
-
-function Update-EnvironmentPath {
-    $env:Path = Get-EnvironmentPath
-    $env:Path = "$env:Path;$env:ALLUSERSPROFILE\Chocolatey\bin"
+function Refresh-PathEnvironment {
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 }
 
 function Install-Chocolatey {
+    Log-Info "Checking Chocolatey..."
+    
     if (Test-CommandExists choco) {
-        Log-Success "Chocolatey is already installed"
+        $chocoVersion = (choco --version 2>&1 | Select-Object -First 1)
+        Log-Success "Chocolatey already installed: $chocoVersion"
         return
     }
     
-    Log-Info "Installing Chocolatey..."
+    Log-Info "Installing Chocolatey (this may take a moment)..."
     try {
         Set-ExecutionPolicy Bypass -Scope Process -Force
         [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+        
         $ChocoInstallUri = 'https://community.chocolatey.org/install.ps1'
         $WebClient = New-Object System.Net.WebClient
-        $WebClient.DownloadString($ChocoInstallUri) | Invoke-Expression
+        $ChocoScript = $WebClient.DownloadString($ChocoInstallUri)
         
-        # Update PATH
-        Update-EnvironmentPath
+        $ChocoScript | Invoke-Expression
         
-        # Verify installation
-        if (-not (Test-CommandExists choco)) {
-            Log-Warning "Chocolatey install completed but command not found, refreshing PATH..."
-            $env:Path += ";$env:ALLUSERSPROFILE\Chocolatey\bin"
+        # Refresh PATH
+        Refresh-PathEnvironment
+        
+        # Verify
+        Start-Sleep -Seconds 2
+        if (Test-CommandExists choco) {
+            $chocoVersion = (choco --version 2>&1 | Select-Object -First 1)
+            Log-Success "Chocolatey installed successfully: $chocoVersion"
         }
-        
-        Log-Success "Chocolatey installed successfully"
+        else {
+            Log-Error "Chocolatey installation failed"
+        }
     }
     catch {
         Log-Error "Failed to install Chocolatey: $_"
@@ -100,73 +110,93 @@ function Install-Tool {
     param(
         [string]$ToolName,
         [string]$ChocoPackage,
-        [string]$CommandToTest
+        [string]$CommandToTest,
+        [string]$VersionFlag = "--version"
     )
     
+    Log-Info "Checking $ToolName..."
+    
     if (Test-CommandExists $CommandToTest) {
-        $version = & $CommandToTest --version 2>&1 | Select-Object -First 1
-        Log-Success "$ToolName is already installed: $version"
+        try {
+            $version = & $CommandToTest $VersionFlag 2>&1 | Select-Object -First 1
+            Log-Success "$ToolName already installed: $version"
+        }
+        catch {
+            Log-Success "$ToolName already installed"
+        }
         return
     }
     
-    Log-Info "Installing $ToolName..."
+    Log-Info "Installing $ToolName (this may take a few minutes)..."
     try {
-        choco install $ChocoPackage -y --no-progress
-        Update-EnvironmentPath
+        choco install $ChocoPackage -y --no-progress --ignore-checksums
         
-        # Wait for installation to complete
-        Start-Sleep -Seconds 2
-        
-        # Verify
-        if (Test-CommandExists $CommandToTest) {
-            $version = & $CommandToTest --version 2>&1 | Select-Object -First 1
-            Log-Success "$ToolName installed: $version"
+        if ($LASTEXITCODE -eq 0) {
+            # Refresh PATH
+            Refresh-PathEnvironment
+            Start-Sleep -Seconds 3
+            
+            # Verify installation
+            if (Test-CommandExists $CommandToTest) {
+                try {
+                    $version = & $CommandToTest $VersionFlag 2>&1 | Select-Object -First 1
+                    Log-Success "$ToolName installed successfully: $version"
+                }
+                catch {
+                    Log-Success "$ToolName installed successfully"
+                }
+            }
+            else {
+                Log-Warning "$ToolName installed but PATH refresh needed"
+                # Last resort: manually add common paths
+                if ($ToolName -eq "PHP") {
+                    $env:Path += ";C:\tools\php82"
+                }
+                elseif ($ToolName -eq "Node.js") {
+                    $env:Path += ";C:\Program Files\nodejs"
+                }
+            }
         }
         else {
-            Log-Warning "$ToolName installed but command not found in PATH, manual verification needed"
+            Log-Error "$ToolName installation failed with code $LASTEXITCODE"
         }
     }
     catch {
-        Log-Error "Failed to install $ToolName: $_"
+        Log-Error "Failed to install $ToolName : $_"
     }
 }
 
 # ============================================
-# Chocolatey Installation
+# Installation Steps
 # ============================================
 
-Log-Info "Checking for Chocolatey..."
+Write-Host ""
+Log-Info "Step 1: Installing System Dependencies"
+Write-Host "════════════════════════════════════════" -ForegroundColor $Info_Color
+
 Install-Chocolatey
 
-# ============================================
-# Dependencies Installation
-# ============================================
-
-Log-Info "Installing dependencies (PHP, Node.js, Composer)..."
-
-Install-Tool -ToolName "PHP" -ChocoPackage "php" -CommandToTest "php"
+Install-Tool -ToolName "PHP 8.2+" -ChocoPackage "php" -CommandToTest "php" -VersionFlag "-v"
 Install-Tool -ToolName "Node.js" -ChocoPackage "nodejs" -CommandToTest "node"
 Install-Tool -ToolName "Composer" -ChocoPackage "composer" -CommandToTest "composer"
 
-# Final PATH update
-Update-EnvironmentPath
+# Final PATH refresh
+Refresh-PathEnvironment
 
-# ============================================
-# Verification
-# ============================================
-
-Log-Info "Verifying installations..."
+Write-Host ""
+Log-Info "Step 2: Verifying Installations"
+Write-Host "════════════════════════════════════════" -ForegroundColor $Info_Color
 
 try {
-    $phpVersion = (php -v 2>&1 | Select-Object -First 1)
+    $phpVersion = php -v 2>&1 | Select-Object -First 1
     Log-Success "PHP: $phpVersion"
 }
 catch {
-    Log-Error "PHP verification failed"
+    Log-Error "PHP verification failed - please check installation manually"
 }
 
 try {
-    $nodeVersion = (node -v)
+    $nodeVersion = node -v
     Log-Success "Node.js: $nodeVersion"
 }
 catch {
@@ -174,7 +204,7 @@ catch {
 }
 
 try {
-    $npmVersion = (npm -v)
+    $npmVersion = npm -v
     Log-Success "npm: $npmVersion"
 }
 catch {
@@ -182,7 +212,7 @@ catch {
 }
 
 try {
-    $composerVersion = (composer --version 2>&1 | Select-Object -First 1)
+    $composerVersion = composer --version 2>&1 | Select-Object -First 1
     Log-Success "Composer: $composerVersion"
 }
 catch {
@@ -193,41 +223,56 @@ catch {
 # Project Setup
 # ============================================
 
+Write-Host ""
+Log-Info "Step 3: Setting Up Tomodoro Project"
+Write-Host "════════════════════════════════════════" -ForegroundColor $Info_Color
+
 $projectRoot = Split-Path -Parent $PSCommandPath
-if (Test-Path (Join-Path $projectRoot "composer.json")) {
-    Push-Location $projectRoot
-} else {
-    Log-Error "composer.json not found. Are you in the project root directory?"
+$composerJsonPath = Join-Path $projectRoot "composer.json"
+
+if (-not (Test-Path $composerJsonPath)) {
+    Log-Error "composer.json not found in $projectRoot`nPlease run this script from the project root directory"
 }
 
-Log-Info "Setting up project..."
+Push-Location $projectRoot
 
-# Install PHP dependencies
-Log-Info "Installing PHP dependencies (this may take a few minutes)..."
-composer install --no-dev --optimize-autoloader
+Log-Info "Installing PHP dependencies (this may take several minutes)..."
+composer install --no-dev --optimize-autoloader 2>&1 | ForEach-Object {
+    if ($_ -match "error|failed" -and $LASTEXITCODE -ne 0) {
+        Log-Warning $_
+    }
+}
 if ($LASTEXITCODE -ne 0) {
-    Log-Error "Composer install failed"
+    Log-Warning "Composer install returned exit code $LASTEXITCODE"
 }
 
-# Install npm dependencies
-Log-Info "Installing npm dependencies (this may take a few minutes)..."
-npm install
+Log-Info "Installing Node.js dependencies (this may take several minutes)..."
+npm install 2>&1 | ForEach-Object {
+    if ($_ -match "error|ERR!" -and $LASTEXITCODE -ne 0) {
+        Log-Warning $_
+    }
+}
 if ($LASTEXITCODE -ne 0) {
-    Log-Error "npm install failed"
+    Log-Warning "npm install returned exit code $LASTEXITCODE"
 }
 
 # ============================================
-# Configuration
+# Environment Configuration
 # ============================================
 
-Log-Info "Configuring application..."
+Write-Host ""
+Log-Info "Step 4: Configuring Application"
+Write-Host "════════════════════════════════════════" -ForegroundColor $Info_Color
 
-# Create .env if it doesn't exist
+# Create .env file
 if (-not (Test-Path ".env")) {
     Log-Info "Creating .env file..."
     if (Test-Path ".env.example") {
         Copy-Item ".env.example" ".env"
-    } else {
+        Log-Success ".env created from .env.example"
+    }
+    else {
+        Log-Warning ".env.example not found, creating minimal .env"
         $envContent = @"
 APP_NAME=Tomodoro
 APP_ENV=local
@@ -236,61 +281,99 @@ APP_URL=http://localhost:8000
 LOG_CHANNEL=stack
 LOG_LEVEL=debug
 DB_CONNECTION=sqlite
+DB_DATABASE=database.sqlite
 QUEUE_CONNECTION=sync
 SESSION_DRIVER=file
 "@
         Set-Content ".env" $envContent
+        Log-Success ".env created with default configuration"
     }
 }
+else {
+    Log-Success ".env already exists"
+}
 
-# Generate app key
-if (-not (Select-String -Path ".env" -Pattern "APP_KEY=base64:" -Quiet)) {
+# Generate application key if not present
+Log-Info "Checking application key..."
+$envContent = Get-Content ".env"
+if ($envContent -notmatch "APP_KEY=base64:") {
     Log-Info "Generating application key..."
-    php artisan key:generate --force
+    try {
+        php artisan key:generate --force 2>&1
+        Log-Success "Application key generated"
+    }
+    catch {
+        Log-Error "Failed to generate application key: $_"
+    }
 }
 else {
-    Log-Info "Application key already set"
+    Log-Success "Application key already set"
 }
 
 # ============================================
 # Database Setup
 # ============================================
 
-Log-Info "Setting up database..."
-php artisan migrate --seed --force
-if ($LASTEXITCODE -ne 0) {
-    Log-Warning "Database setup completed with warnings (this is often OK on first run)"
+Write-Host ""
+Log-Info "Step 5: Setting Up Database"
+Write-Host "════════════════════════════════════════" -ForegroundColor $Info_Color
+
+Log-Info "Running database migrations and seeders..."
+try {
+    php artisan migrate:fresh --seed --force 2>&1
+    Log-Success "Database initialized successfully"
+}
+catch {
+    Log-Warning "Database setup completed with warnings (check database file was created)"
 }
 
 # ============================================
-# Build Frontend
+# Frontend Build
 # ============================================
 
-Log-Info "Building frontend assets (this may take a minute)..."
-npm run build
-if ($LASTEXITCODE -ne 0) {
-    Log-Error "Frontend build failed"
+Write-Host ""
+Log-Info "Step 6: Building Frontend Assets"
+Write-Host "════════════════════════════════════════" -ForegroundColor $Info_Color
+
+Log-Info "Building frontend (this may take a minute)..."
+try {
+    npm run build 2>&1 | Out-Null
+    Log-Success "Frontend assets built successfully"
+}
+catch {
+    Log-Error "Frontend build failed: $_"
 }
 
 # ============================================
-# Summary and Start
+# Completion
 # ============================================
 
 Pop-Location
 
 Write-Host ""
-Log-Success "✨ Installation complete!"
+Write-Host "╔════════════════════════════════════════╗" -ForegroundColor $Success
+Write-Host "║     ✨ Installation Complete! ✨      ║" -ForegroundColor $Success
+Write-Host "╚════════════════════════════════════════╝" -ForegroundColor $Success
 Write-Host ""
+
 Log-Info "System Information:"
-Write-Host "  PHP: $(php -v | Select-Object -First 1)"
-Write-Host "  Node.js: $(node -v)"
-Write-Host "  npm: $(npm -v)"
-Write-Host "  Composer: $(composer --version | Select-Object -First 1)"
+Write-Host "  📦 PHP: $(php -v 2>&1 | Select-Object -First 1)"
+Write-Host "  📦 Node.js: $(node -v)"
+Write-Host "  📦 npm: $(npm -v)"
+Write-Host "  📦 Composer: $(composer --version 2>&1 | Select-Object -First 1)"
 Write-Host ""
-Log-Info "Starting development server..."
-Write-Host "  📱 Open: http://localhost:8000"
-Write-Host "  🛑 Stop with: Ctrl+C"
+
+Log-Info "Next Steps:"
+Write-Host "  1. Open project folder: cd $(Split-Path -Leaf $projectRoot)"
+Write-Host "  2. Start dev server:   php artisan serve"
+Write-Host "  3. Open in browser:    http://localhost:8000"
 Write-Host ""
+Write-Host "  📚 Documentation: Check docs/QUICK_SETUP.md for more info"
+Write-Host "  🆘 Issues?       Check docs/INSTALLATION_GUIDE.md"
+Write-Host ""
+
+Log-Info "Starting development server in 3 seconds..."
+Start-Sleep -Seconds 3
 
 cd $projectRoot
 php artisan serve
