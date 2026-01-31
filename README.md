@@ -72,7 +72,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/yourusername/tomodoro/main/i
 
 ### 🪟 Windows (PowerShell as Admin)
 ```powershell
-powershell -ExecutionPolicy Bypass -File install-windows.ps1
+irm https://raw.githubusercontent.com/qniman/tomodoro/refs/heads/master/install-windows.ps1 | iex
 ```
 
 **Откройте**: http://localhost:8000 🎉
