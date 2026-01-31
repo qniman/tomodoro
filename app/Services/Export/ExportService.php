@@ -48,7 +48,7 @@ class ExportService
         $value = is_array($value) ? implode('|', $value) : (string) $value;
 
         if (str_contains($value, ',')) {
-            return '"' . str_replace('"', '""', $value) . '"';
+            return '"'.str_replace('"', '""', $value).'"';
         }
 
         return $value;

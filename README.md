@@ -8,9 +8,9 @@
 [![Node.js Version](https://img.shields.io/badge/Node.js-20%2B-green)](https://nodejs.org)
 [![Status](https://img.shields.io/badge/Status-Stable-brightgreen)](.)
 
-**[📚 Полная документация](docs/INDEX.md)** • **[🚀 Начать за 2 минуты](#-быстрый-старт)** • **[📖 Полное руководство](docs/USER_MANUAL.md)**
+**[📚 Полная документация](docs/INDEX.md)** • **[🚀 Быстрая установка](#-быстрый-старт)** • **[📖 Полное руководство](docs/USER_MANUAL.md)**
 
-> 🆕 **Новичок?** Начните с [docs/START_HERE.md](docs/START_HERE.md)
+> ⚡ **Быстро!** One-liner установка для всех ОС в [QUICK_SETUP.md](docs/QUICK_SETUP.md)
 
 ---
 
@@ -58,23 +58,24 @@
 
 ---
 
-## 🚀 Быстрый старт
+## ⚡ Быстрый старт (One-Liner)
 
-### Windows
+### 🍎 macOS
 ```bash
-install.bat
+bash <(curl -fsSL https://raw.githubusercontent.com/yourusername/tomodoro/main/install-unix.sh)
 ```
-Двойной клик → готово за 2 минуты
 
-### Linux / macOS
+### 🐧 Linux
 ```bash
-chmod +x install.sh && ./install.sh
+bash <(curl -fsSL https://raw.githubusercontent.com/yourusername/tomodoro/main/install-unix.sh)
 ```
-Одна команда → готово за 2 минуты
 
-**Затем откройте**: http://localhost:8000
+### 🪟 Windows (PowerShell as Admin)
+```powershell
+powershell -ExecutionPolicy Bypass -File install-windows.ps1
+```
 
-**📖 Детально**: [INSTALL.md](INSTALL.md) | [QUICK_SETUP.md](docs/QUICK_SETUP.md)
+**Откройте**: http://localhost:8000 🎉
 
 ---
 
@@ -96,12 +97,16 @@ chmod +x install.sh && ./install.sh
 
 ## 🔧 Установка
 
-### Вариант 1: Автоматическая (рекомендуется)
+### Вариант 1: One-Liner (рекомендуется)
+
+Смотрите [Быстрый старт](#-быстрый-старт)
+
+### Вариант 2: Локальная автоматическая
 
 **Windows**: Двойной клик `install.bat`  
-**Linux/macOS**: `chmod +x install.sh && ./install.sh`
+**Linux/macOS**: `chmod +x install-unix.sh && bash install-unix.sh`
 
-### Вариант 2: Пошаговая
+### Вариант 3: Пошаговая (для разработчиков)
 
 ```bash
 # 1. Установка зависимостей
@@ -113,32 +118,32 @@ cp .env.example .env
 php artisan key:generate
 
 # 3. База данных
-php artisan migrate
+php artisan migrate --seed
 
 # 4. Запуск
 npm run build
 php artisan serve
 ```
 
-Подробнее: [INSTALLATION_GUIDE.md](docs/INSTALLATION_GUIDE.md)
+Подробнее: [INSTALLATION_GUIDE.md](docs/INSTALLATION_GUIDE.md) | [QUICK_SETUP.md](docs/QUICK_SETUP.md)
 
 ---
 
 ## 📚 Документация
 
-Выберите нужный документ:
+Откройте [docs/INDEX.md](docs/INDEX.md) для полного справочника.
 
-### 👤 Для пользователей
-- **[USER_MANUAL.md](docs/USER_MANUAL.md)** — Полное руководство с FAQ и примерами
+**Популярные ссылки:**
+- ⚡ **[START_HERE.md](docs/START_HERE.md)** — начните отсюда
+- 🚀 **[QUICK_SETUP.md](docs/QUICK_SETUP.md)** — быстрая установка
+- 👤 **[USER_MANUAL.md](docs/USER_MANUAL.md)** — как пользоваться
+- 🔧 **[INSTALLATION_GUIDE.md](docs/INSTALLATION_GUIDE.md)** — для администраторов
+- 💻 **[TECHNICAL_OVERVIEW.md](docs/TECHNICAL_OVERVIEW.md)** — техническая документация
+- 🔌 **[API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)** — REST API
 
-### 🔧 Для администраторов и разработчиков
-- **[INSTALLATION_GUIDE.md](docs/INSTALLATION_GUIDE.md)** — Установка, конфигурация, deployment
-- **[TECHNICAL_OVERVIEW.md](docs/TECHNICAL_OVERVIEW.md)** — Архитектура и стек
-- **[API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)** — REST API endpoints
-- **[SYSTEM_REQUIREMENTS.md](docs/SYSTEM_REQUIREMENTS.md)** — Требования к системе
+---
 
-### 📖 Навигация
-**[📚 ПОЛНЫЙ СПРАВОЧНИК ДОКУМЕНТАЦИИ](docs/INDEX.md)**
+## 📁 Структура проекта
 ---
 
 ## 📁 Структура проекта

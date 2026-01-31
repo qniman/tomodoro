@@ -12,9 +12,7 @@ use Illuminate\Http\Request;
 
 class TaskController extends Controller
 {
-    public function __construct(protected TaskService $tasks)
-    {
-    }
+    public function __construct(protected TaskService $tasks) {}
 
     public function index(Request $request)
     {

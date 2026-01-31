@@ -3,8 +3,8 @@
 namespace App\Services\Pomodoro;
 
 use App\Models\PomodoroSession;
-use App\Models\User;
 use App\Models\Task;
+use App\Models\User;
 use Carbon\Carbon;
 
 class PomodoroService

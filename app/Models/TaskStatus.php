@@ -26,7 +26,7 @@ class TaskStatus extends Model
 
     public static function allowedNames(): array
     {
-        return array_map(fn($s) => $s['name'], self::ALLOWED_STATUSES);
+        return array_map(fn ($s) => $s['name'], self::ALLOWED_STATUSES);
     }
 
     public static function forUserAllowed(int $userId)

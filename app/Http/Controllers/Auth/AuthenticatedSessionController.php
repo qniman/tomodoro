@@ -12,9 +12,7 @@ use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
 {
-    public function __construct(private TaskPresetService $presetService)
-    {
-    }
+    public function __construct(private TaskPresetService $presetService) {}
 
     public function create(): View
     {

@@ -5,13 +5,14 @@ namespace App\Livewire;
 use App\Models\PomodoroSession;
 use App\Models\Task;
 use App\Services\Pomodoro\PomodoroService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
-use Carbon\Carbon;
 
 class PomodoroTimer extends Component
 {
     protected $listeners = ['syncProgress'];
+
     public array $config = [
         'work_minutes' => 25,
         'break_minutes' => 5,
@@ -19,10 +20,15 @@ class PomodoroTimer extends Component
     ];
 
     public ?int $selectedTaskId = null;
+
     public ?int $recommendedPomodoros = null;
+
     public ?int $estimatedMinutes = null;
+
     public bool $showEstimateModal = false;
+
     public ?int $estimateTaskId = null;
+
     public ?int $estimateMinutesInput = null;
 
     public function render()
@@ -39,6 +45,7 @@ class PomodoroTimer extends Component
         if (! $taskId) {
             $this->recommendedPomodoros = null;
             $this->estimatedMinutes = null;
+
             return;
         }
 

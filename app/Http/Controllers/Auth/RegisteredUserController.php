@@ -18,9 +18,7 @@ class RegisteredUserController extends Controller
         return view('auth.register');
     }
 
-    public function __construct(private TaskPresetService $presetService)
-    {
-    }
+    public function __construct(private TaskPresetService $presetService) {}
 
     public function store(RegisterRequest $request): RedirectResponse
     {

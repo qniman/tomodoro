@@ -2,12 +2,10 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\Task;
-use App\Models\User;
-use Carbon\Carbon;
 
 class PomodoroSession extends Model
 {
@@ -65,6 +63,7 @@ class PomodoroSession extends Model
             return $maxSec;
         }
         $elapsed = Carbon::now()->diffInSeconds($phaseStart, false);
+
         return max(0, $maxSec - $elapsed);
     }
 }

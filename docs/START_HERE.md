@@ -1,53 +1,75 @@
-# 🚀 С ЧЕГО НАЧАТЬ?
+# 🚀 Начните отсюда
 
-Вы только что скачали Tomodoro. Вот что делать дальше:
+## ⚡ One-Liner Setup - выберите вашу ОС
 
----
-
-## 📖 Шаг 1: Прочитайте README (2 минуты)
-
-Откройте [README.md](README.md) — это главная страница проекта.
-
-Она расскажет вам:
-- Что такое Tomodoro?
-- Какие функции?
-- Какие требования?
-
----
-
-## 🗺️ Шаг 2: Выберите ваш путь
-
-Откройте [docs/INDEX.md](docs/INDEX.md) и выберите нужный документ:
-
-### 👤 Я хочу просто использовать приложение
-→ Читайте: [docs/QUICK_SETUP.md](docs/QUICK_SETUP.md) + [docs/USER_MANUAL.md](docs/USER_MANUAL.md)
-
-### 🔧 Я администратор / системный администратор
-→ Читайте: [docs/SYSTEM_REQUIREMENTS.md](docs/SYSTEM_REQUIREMENTS.md) + [docs/INSTALLATION_GUIDE.md](docs/INSTALLATION_GUIDE.md)
-
-### 👨‍💻 Я разработчик / хочу расширять приложение
-→ Читайте: [docs/QUICK_SETUP.md](docs/QUICK_SETUP.md) + [docs/TECHNICAL_OVERVIEW.md](docs/TECHNICAL_OVERVIEW.md) + [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)
-
----
-
-## ⚡ Шаг 3: Установите (2 минуты)
-
-### Windows
+### 🍎 macOS
 ```bash
-install.bat
-```
-Двойной клик и всё готово!
-
-### Linux / macOS
-```bash
-chmod +x install.sh && ./install.sh
+bash <(curl -fsSL https://raw.githubusercontent.com/yourusername/tomodoro/main/install-unix.sh)
 ```
 
-После установки откройте: **http://localhost:8000**
+### 🐧 Linux (Ubuntu/Debian/Fedora/Arch)
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/yourusername/tomodoro/main/install-unix.sh)
+```
 
-Подробнее: [docs/QUICK_SETUP.md](docs/QUICK_SETUP.md)
+### 🪟 Windows (PowerShell as Admin)
+```powershell
+powershell -ExecutionPolicy Bypass -File install-windows.ps1
+```
+
+**Готово!** Откройте **http://localhost:8000** 🎉
 
 ---
+
+## 📋 Что будет установлено?
+
+Скрипт автоматически установит и настроит:
+- ✅ PHP 8.2+, Node.js 20+, Composer
+- ✅ Все зависимости проекта
+- ✅ Базу данных (SQLite)
+- ✅ Фронтенд (Vite)
+- ✅ Запустит сервер разработки
+
+---
+
+## ✨ Первые шаги
+
+1. **Создайте учетную запись** - регистрация на стартовой странице
+2. **Добавьте задачу** - перейдите в "Tasks" → "New Task"
+3. **Запустите таймер** - нажмите "Start" и работайте 25 минут
+
+---
+
+## 🛠️ Полезные команды
+
+```bash
+# Запустить сервер (если остановлен)
+php artisan serve
+
+# Собрать фронтенд
+npm run build
+
+# Запустить тесты
+php artisan test
+
+# Очистить кеш
+php artisan cache:clear
+```
+
+---
+
+## ❌ Проблемы?
+
+| Проблема | Решение |
+|----------|---------|
+| **Port 8000 занят** | `php artisan serve --port=8001` |
+| **Permission denied** | `chmod +x install-unix.sh` (Linux/macOS) |
+| **Execution Policy** | `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` (Windows) |
+| **PHP/Node не найдены** | Переустановите: `brew install php node` (macOS) или `apt install` (Linux) |
+
+---
+
+## 📚 Документация
 
 ## 💡 Быстрые ссылки
 

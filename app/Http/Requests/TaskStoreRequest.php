@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\TaskStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use App\Models\TaskStatus;
 
 class TaskStoreRequest extends FormRequest
 {

@@ -11,9 +11,7 @@ use Illuminate\Http\Request;
 
 class PomodoroController extends Controller
 {
-    public function __construct(protected PomodoroService $service)
-    {
-    }
+    public function __construct(protected PomodoroService $service) {}
 
     public function index(Request $request)
     {
