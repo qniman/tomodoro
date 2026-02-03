@@ -7,14 +7,14 @@
 ## 📚 Документация
 
 Подробная документация проекта находится в папке `docs/`:
-- `docs/user-guide.md` — Руководство пользователя
-- `docs/admin-guide.md` — Руководство системного администратора
-- `docs/deployment-windows.md` — Развёртка на Windows
-- `docs/deployment-macos.md` — Развёртка на macOS
-- `docs/deployment-linux.md` — Развёртка на Linux
-- `docs/architecture.md` — Архитектура проекта
-- `docs/contributing.md` — Как внести вклад
-- `docs/troubleshooting.md` — Типовые проблемы и их решения
+- [`USER_GUIDE`](docs/user-guide.md) — Руководство пользователя
+- [`ADMIN_GUIDE`](docs/admin-guide.md) — Руководство системного администратора
+- [`DEPLOYMENT_WINDOWS`](docs/deployment-windows.md) — Развёртка на Windows
+- [`DEPLOYMENT_MACOS`](docs/deployment-macos.md) — Развёртка на macOS
+- [`DEPLOYMENT_LINUX`](docs/deployment-linux.md) — Развёртка на Linux
+- [`ARCHITECTURE`](docs/architecture.md) — Архитектура проекта
+- [`CONTRIBUTING`](docs/contributing.md) — Как внести вклад
+- [`TROUBLESHOOTING.md`](docs/troubleshooting.md) — Типовые проблемы и их решения
 
 ---
 
@@ -73,7 +73,7 @@ php artisan serve
 
 ## 🤝 Вклад в проект
 
-См. `docs/contributing.md` и `.github/ISSUE_TEMPLATE`/`.github/PULL_REQUEST_TEMPLATE` для правил работы с репозиторием.
+См. [CONTRIBUTING](docs/contributing.md) и `.github/ISSUE_TEMPLATE`/`.github/PULL_REQUEST_TEMPLATE` для правил работы с репозиторием.
 
 ---
 
