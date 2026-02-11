@@ -11,7 +11,9 @@ use Illuminate\Http\Request;
 
 class CalendarController extends Controller
 {
-    public function __construct(protected CalendarService $service) {}
+    public function __construct(protected CalendarService $service)
+    {
+    }
 
     public function index(Request $request)
     {

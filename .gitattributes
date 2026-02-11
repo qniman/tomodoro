@@ -1,65 +1,11 @@
 * text=auto eol=lf
 
-# Source code
-*.php diff=php
-*.js diff=javascript
-*.json diff=json
+*.blade.php diff=html
 *.css diff=css
 *.html diff=html
 *.md diff=markdown
-*.blade.php diff=html
+*.php diff=php
 
-# Images
-*.jpg binary
-*.jpeg binary
-*.png binary
-*.gif binary
-*.svg binary
-*.ico binary
-
-# Archives
-*.zip binary
-*.tar binary
-*.tar.gz binary
-*.rar binary
-*.7z binary
-
-# Audio and video
-*.mp3 binary
-*.mp4 binary
-*.mov binary
-*.avi binary
-*.wav binary
-
-# Fonts
-*.ttf binary
-*.otf binary
-*.eot binary
-*.woff binary
-*.woff2 binary
-
-# Export ignore (не включать в архивы)
 /.github export-ignore
-/.git export-ignore
-/.gitignore export-ignore
-/.gitattributes export-ignore
-/.env.example export-ignore
-/CHANGELOG.md export-ignore
-/CONTRIBUTING.md export-ignore
-/DOCUMENTATION_*.md export-ignore
-/QUICK_START.md export-ignore
-/.styleci.yml export-ignore
-/phpunit.xml export-ignore
-/.phpunit.cache export-ignore
-/docker-compose.yml export-ignore
-/Dockerfile export-ignore
-/tests export-ignore
-.editorconfig export-ignore
-.env.*.example export-ignore
-
-# Line endings
-*.bat text eol=crlf
-*.cmd text eol=crlf
-*.ps1 text eol=crlf
-*.sh text eol=lf
-*.bash text eol=lf
+CHANGELOG.md export-ignore
+.styleci.yml export-ignore

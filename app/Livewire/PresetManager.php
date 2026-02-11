@@ -11,19 +11,13 @@ use Livewire\Component;
 class PresetManager extends Component
 {
     public bool $showTagModal = false;
-
     public bool $showCategoryModal = false;
-
     public bool $showStatusModal = false;
-
     public ?int $editingId = null;
-
     public ?string $editingType = null;
 
     public array $tagForm = ['name' => '', 'color' => '#a855f7'];
-
     public array $categoryForm = ['name' => '', 'color' => '#6366f1'];
-
     public array $statusForm = ['name' => '', 'color' => '#22c55e'];
 
     public function render()
@@ -106,7 +100,7 @@ class PresetManager extends Component
     public function deleteStatus(int $id): void
     {
         // Deleting statuses is disabled. Do nothing.
-
+        return;
     }
 
     public function openModal(string $type): void

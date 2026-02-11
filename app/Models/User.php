@@ -4,10 +4,16 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\Task;
+use App\Models\Tag;
+use App\Models\PomodoroSession;
+use App\Models\CalendarEvent;
+use App\Models\TaskCategory;
+use App\Models\TaskStatus;
 
 class User extends Authenticatable
 {

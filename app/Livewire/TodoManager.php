@@ -6,42 +6,29 @@ use App\Models\Tag;
 use App\Models\Task;
 use App\Models\TaskCategory;
 use App\Models\TaskStatus;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 use Livewire\Component;
 
 class TodoManager extends Component
 {
     public array $filters = [];
-
     public array $filterDraft = [];
-
     public array $taskForm = [];
-
     public array $selectedTagIds = [];
-
     public ?int $editingTaskId = null;
-
     public ?string $selectedStatusFilter = null;
 
     public bool $showTaskModal = false;
-
     public bool $showDeleteModal = false;
-
     public bool $showTagModal = false;
-
     public bool $showCategoryModal = false;
-
     public bool $showStatusModal = false;
-
     public bool $isEditing = false;
-
     public ?int $deletingTaskId = null;
 
     public array $tagForm = ['name' => '', 'color' => '#a855f7'];
-
     public array $categoryForm = ['name' => '', 'color' => '#6366f1'];
-
     public array $statusForm = ['name' => '', 'color' => '#22c55e'];
 
     public array $priorityOptions = [
@@ -119,7 +106,7 @@ class TodoManager extends Component
         }
         $task = $this->editingTaskId
             ? Task::where('user_id', Auth::id())->findOrFail($this->editingTaskId)
-            : new Task;
+            : new Task();
 
         $task->fill($payload);
         $task->save();

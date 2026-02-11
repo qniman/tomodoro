@@ -22,7 +22,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/api-playground', [WorkspaceController::class, 'apiDocs'])->name('workspace.api');
     Route::get('/presets', [WorkspaceController::class, 'presets'])->name('workspace.presets');
     Route::get('/settings', [WorkspaceController::class, 'settings'])->name('workspace.settings');
-
     Route::post('/settings', [WorkspaceController::class, 'updateSettings'])->name('workspace.settings.update');
+
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 });

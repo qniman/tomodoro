@@ -2,8 +2,8 @@
 
 namespace App\Services\Todo;
 
-use App\Models\Tag;
 use App\Models\Task;
+use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Arr;

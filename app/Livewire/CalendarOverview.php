@@ -5,18 +5,15 @@ namespace App\Livewire;
 use App\Models\CalendarEvent;
 use App\Models\Task;
 use App\Models\TaskCategory;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
+use Carbon\Carbon;
 
 class CalendarOverview extends Component
 {
     public array $eventForm = [];
-
     public string $currentMonth;
-
     public bool $showEventModal = false;
-
     public ?string $selectedDate = null;
 
     public function mount(): void
