@@ -1,0 +1,191 @@
+/* ======================================================================== *
+ * Tomodoro · Design Tokens
+ * Все значения дизайна — здесь. Темы переключаются через [data-theme] на <html>.
+ * ======================================================================== */
+
+:root,
+:root[data-theme='light'] {
+    /* Палитра поверхностей */
+    --bg: #faf9f5;
+    --surface: #ffffff;
+    --surface-2: #f4f3ed;
+    --surface-3: #ecebe4;
+    --surface-hover: #efeee7;
+    --surface-active: #e7e6df;
+
+    --border: #e7e5dc;
+    --border-strong: #d6d4c8;
+    --border-focus: #e5533a;
+
+    --text: #1d1d1a;
+    --text-muted: #6c6b62;
+    --text-subtle: #9a988d;
+    --text-on-accent: #ffffff;
+
+    /* Акцент — «помодоро» */
+    --accent: #e5533a;
+    --accent-hover: #d04429;
+    --accent-active: #b53b22;
+    --accent-soft: #fceae6;
+    --accent-soft-hover: #fadbd3;
+    --accent-ring: rgba(229, 83, 58, 0.32);
+
+    /* Семантика */
+    --success: #2ea043;
+    --success-soft: #e3f5e8;
+    --warning: #cf8a04;
+    --warning-soft: #fbf1d3;
+    --danger: #d04429;
+    --danger-soft: #fbe6df;
+    --info: #2563eb;
+    --info-soft: #e1ebfd;
+
+    /* Приоритеты */
+    --priority-low: #5b8def;
+    --priority-normal: #94a3b8;
+    --priority-high: #ed7c1c;
+    --priority-urgent: #d04429;
+
+    /* Тени */
+    --shadow-1: 0 1px 2px rgba(20, 19, 14, 0.05);
+    --shadow-2: 0 4px 14px rgba(20, 19, 14, 0.06), 0 1px 3px rgba(20, 19, 14, 0.04);
+    --shadow-3: 0 24px 48px -16px rgba(20, 19, 14, 0.18), 0 6px 16px rgba(20, 19, 14, 0.08);
+    --shadow-pop: 0 14px 32px -10px rgba(20, 19, 14, 0.25);
+    --shadow-inset: inset 0 0 0 1px rgba(20, 19, 14, 0.04);
+
+    /* Подсветка фокуса (доступность) */
+    --focus-ring: 0 0 0 3px var(--accent-ring);
+}
+
+:root[data-theme='dark'] {
+    --bg: #0f0f0e;
+    --surface: #181818;
+    --surface-2: #202021;
+    --surface-3: #28282a;
+    --surface-hover: #242425;
+    --surface-active: #2c2c2e;
+
+    --border: #2a2a2c;
+    --border-strong: #3a3a3d;
+    --border-focus: #e5533a;
+
+    --text: #ececea;
+    --text-muted: #a8a79f;
+    --text-subtle: #6c6b63;
+    --text-on-accent: #ffffff;
+
+    --accent: #e5533a;
+    --accent-hover: #ff6647;
+    --accent-active: #ff7a5f;
+    --accent-soft: rgba(229, 83, 58, 0.14);
+    --accent-soft-hover: rgba(229, 83, 58, 0.22);
+    --accent-ring: rgba(229, 83, 58, 0.42);
+
+    --success: #4ade80;
+    --success-soft: rgba(74, 222, 128, 0.12);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.14);
+    --danger: #ff6b50;
+    --danger-soft: rgba(255, 107, 80, 0.14);
+    --info: #60a5fa;
+    --info-soft: rgba(96, 165, 250, 0.14);
+
+    --priority-low: #7aa3ff;
+    --priority-normal: #94a3b8;
+    --priority-high: #f6a554;
+    --priority-urgent: #ff6b50;
+
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-2: 0 6px 18px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-3: 0 30px 60px -16px rgba(0, 0, 0, 0.55), 0 8px 22px rgba(0, 0, 0, 0.4);
+    --shadow-pop: 0 18px 36px -12px rgba(0, 0, 0, 0.6);
+    --shadow-inset: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+
+    --focus-ring: 0 0 0 3px var(--accent-ring);
+}
+
+/* Авто-режим: следим за prefers-color-scheme, если data-theme=auto */
+@media (prefers-color-scheme: dark) {
+    :root[data-theme='auto'] {
+        --bg: #0f0f0e;
+        --surface: #181818;
+        --surface-2: #202021;
+        --surface-3: #28282a;
+        --surface-hover: #242425;
+        --surface-active: #2c2c2e;
+        --border: #2a2a2c;
+        --border-strong: #3a3a3d;
+        --text: #ececea;
+        --text-muted: #a8a79f;
+        --text-subtle: #6c6b63;
+        --accent-soft: rgba(229, 83, 58, 0.14);
+        --accent-soft-hover: rgba(229, 83, 58, 0.22);
+        --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+        --shadow-2: 0 6px 18px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
+        --shadow-3: 0 30px 60px -16px rgba(0, 0, 0, 0.55), 0 8px 22px rgba(0, 0, 0, 0.4);
+    }
+}
+
+:root {
+    /* Шрифты */
+    --font-sans: 'Geologica', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto,
+        'Helvetica Neue', Arial, sans-serif;
+    --font-display: 'Geologica', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+
+    /* Шкала кеглей (px → используются rem-эквиваленты) */
+    --fz-xs: 0.6875rem;   /* 11 */
+    --fz-sm: 0.8125rem;   /* 13 */
+    --fz-base: 0.9375rem; /* 15 */
+    --fz-md: 1rem;        /* 16 */
+    --fz-lg: 1.125rem;    /* 18 */
+    --fz-xl: 1.375rem;    /* 22 */
+    --fz-2xl: 1.75rem;    /* 28 */
+    --fz-3xl: 2.25rem;    /* 36 */
+
+    /* Веса */
+    --fw-regular: 400;
+    --fw-medium: 500;
+    --fw-semibold: 600;
+    --fw-bold: 700;
+
+    /* Шкала отступов (4 px) */
+    --s-1: 0.25rem;  /* 4  */
+    --s-2: 0.5rem;   /* 8  */
+    --s-3: 0.75rem;  /* 12 */
+    --s-4: 1rem;     /* 16 */
+    --s-5: 1.25rem;  /* 20 */
+    --s-6: 1.5rem;   /* 24 */
+    --s-7: 2rem;     /* 32 */
+    --s-8: 3rem;     /* 48 */
+    --s-9: 4rem;     /* 64 */
+
+    /* Радиусы */
+    --r-1: 6px;
+    --r-2: 10px;
+    --r-3: 14px;
+    --r-4: 18px;
+    --r-pill: 999px;
+
+    /* Длительности */
+    --dur-fast: 120ms;
+    --dur: 180ms;
+    --dur-slow: 280ms;
+
+    --ease: cubic-bezier(0.2, 0, 0, 1);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+
+    /* Z-index слоёв */
+    --z-sidebar: 30;
+    --z-header: 40;
+    --z-floating: 60;
+    --z-toast: 70;
+    --z-modal: 80;
+    --z-tooltip: 90;
+
+    /* Контентные ограничения */
+    --content-max: 1280px;
+    --sidebar-w: 256px;
+    --sidebar-w-compact: 76px;
+}

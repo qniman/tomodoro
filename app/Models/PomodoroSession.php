@@ -2,39 +2,48 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\Task;
-use App\Models\User;
-use Carbon\Carbon;
 
 class PomodoroSession extends Model
 {
     use HasFactory;
 
+    public const STATUS_QUEUED = 'queued';
+    public const STATUS_RUNNING = 'running';
+    public const STATUS_PAUSED = 'paused';
+    public const STATUS_FINISHED = 'finished';
+    public const STATUS_ABORTED = 'aborted';
+
+    public const PHASE_WORK = 'work';
+    public const PHASE_SHORT_BREAK = 'short_break';
+    public const PHASE_LONG_BREAK = 'long_break';
+
     protected $fillable = [
         'user_id',
         'task_id',
-        'work_sec',
-        'break_sec',
-        'total_pomodoros',
-        'completed_pomodoros',
         'status',
         'phase',
+        'work_seconds',
+        'short_break_seconds',
+        'long_break_seconds',
+        'long_break_every',
+        'total_pomodoros',
+        'completed_pomodoros',
+        'phase_started_at',
+        'paused_at',
+        'synced_seconds',
         'started_at',
         'ended_at',
-        'synced_seconds',
-        'paused_at',
-        'phase_started_at',
     ];
 
     protected $casts = [
+        'phase_started_at' => 'datetime',
+        'paused_at' => 'datetime',
         'started_at' => 'datetime',
         'ended_at' => 'datetime',
-        'paused_at' => 'datetime',
-        'phase_started_at' => 'datetime',
-        'synced_seconds' => 'integer',
     ];
 
     public function user(): BelongsTo
@@ -47,24 +56,33 @@ class PomodoroSession extends Model
         return $this->belongsTo(Task::class);
     }
 
-    public function isInBreak(): bool
+    public function isWorking(): bool
     {
-        return $this->phase === 'break';
+        return $this->phase === self::PHASE_WORK;
     }
 
-    public function isPaused(): bool
+    public function phaseDuration(): int
     {
-        return $this->paused_at !== null;
+        return match ($this->phase) {
+            self::PHASE_SHORT_BREAK => (int) $this->short_break_seconds,
+            self::PHASE_LONG_BREAK => (int) $this->long_break_seconds,
+            default => (int) $this->work_seconds,
+        };
     }
 
-    public function getRemainingSeconds(): int
+    public function remainingSeconds(): int
     {
-        $maxSec = $this->isInBreak() ? $this->break_sec : $this->work_sec;
-        $phaseStart = $this->phase_started_at ? Carbon::parse($this->phase_started_at) : null;
-        if (! $phaseStart) {
-            return $maxSec;
+        $duration = $this->phaseDuration();
+        if (! $this->phase_started_at) {
+            return $duration;
         }
-        $elapsed = Carbon::now()->diffInSeconds($phaseStart, false);
-        return max(0, $maxSec - $elapsed);
+
+        if ($this->paused_at) {
+            $elapsed = $this->paused_at->diffInSeconds($this->phase_started_at);
+        } else {
+            $elapsed = Carbon::now()->diffInSeconds($this->phase_started_at, false);
+        }
+
+        return max(0, $duration - max(0, (int) $elapsed));
     }
 }

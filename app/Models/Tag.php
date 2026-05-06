@@ -6,18 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use App\Models\Task;
-use App\Models\User;
 
 class Tag extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'user_id',
-        'name',
-        'color',
-    ];
+    protected $fillable = ['user_id', 'name', 'color'];
 
     public function user(): BelongsTo
     {
@@ -26,6 +20,6 @@ class Tag extends Model
 
     public function tasks(): BelongsToMany
     {
-        return $this->belongsToMany(Task::class, 'task_tag')->withTimestamps();
+        return $this->belongsToMany(Task::class, 'task_tag');
     }
 }

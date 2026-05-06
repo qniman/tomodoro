@@ -1,0 +1,332 @@
+/* ============================================================ *
+ * Floating Pomodoro Widget
+ * ============================================================ */
+
+.pomo {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 70;
+    user-select: none;
+    touch-action: none;
+}
+
+.pomo--dragging { cursor: grabbing !important; transition: none !important; }
+
+/* ===== Свёрнутая «капля»: круглая кнопка с радиальным прогрессом ===== */
+.pomo-bubble {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-3);
+    display: grid;
+    place-items: center;
+    cursor: grab;
+    position: relative;
+    transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease);
+    animation: pop-in var(--dur-slow) var(--ease-out) both;
+}
+
+.pomo-bubble:hover { transform: translateY(-1px); box-shadow: var(--shadow-pop); }
+
+.pomo-bubble[data-phase='work']        { --pomo-color: var(--accent); }
+.pomo-bubble[data-phase='short_break'] { --pomo-color: var(--success); }
+.pomo-bubble[data-phase='long_break']  { --pomo-color: var(--info); }
+
+.pomo-bubble__ring {
+    position: absolute;
+    inset: 0;
+    transform: rotate(-90deg);
+    pointer-events: none;
+}
+
+.pomo-bubble__ring-track {
+    fill: none;
+    stroke: var(--surface-3);
+    stroke-width: 4;
+}
+.pomo-bubble__ring-progress {
+    fill: none;
+    stroke: var(--pomo-color, var(--accent));
+    stroke-width: 4;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 250ms linear;
+}
+
+.pomo-bubble__time {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: var(--fw-semibold);
+    color: var(--text);
+    line-height: 1;
+}
+
+.pomo-bubble__phase-icon {
+    position: absolute;
+    top: 4px; right: 4px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--pomo-color, var(--accent));
+    color: #fff;
+    display: grid; place-items: center;
+}
+
+/* ===== Развернутая карточка ===== */
+.pomo-card {
+    width: 320px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-3);
+    box-shadow: var(--shadow-3);
+    overflow: hidden;
+    animation: pop-in var(--dur-slow) var(--ease-out) both;
+}
+
+.pomo-card[data-phase='work']        { --pomo-color: var(--accent); }
+.pomo-card[data-phase='short_break'] { --pomo-color: var(--success); }
+.pomo-card[data-phase='long_break']  { --pomo-color: var(--info); }
+
+.pomo-card__handle {
+    background: linear-gradient(180deg,
+        color-mix(in oklab, var(--pomo-color, var(--accent)) 16%, var(--surface)),
+        var(--surface));
+    padding: var(--s-3) var(--s-4);
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    cursor: grab;
+    border-bottom: 1px solid var(--border);
+}
+
+.pomo-card__phase {
+    font-size: var(--fz-xs);
+    font-weight: var(--fw-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--pomo-color, var(--accent));
+    display: flex;
+    align-items: center;
+    gap: var(--s-1);
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.pomo-card__actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+}
+
+.pomo-card__body {
+    padding: var(--s-4) var(--s-4) var(--s-3);
+    text-align: center;
+}
+
+.pomo-card__task {
+    color: var(--text-muted);
+    font-size: var(--fz-sm);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: var(--s-3);
+}
+.pomo-card__task strong { color: var(--text); font-weight: var(--fw-medium); }
+
+.pomo-clock {
+    width: 180px; height: 180px;
+    margin: 0 auto var(--s-3);
+    position: relative;
+    display: grid;
+    place-items: center;
+}
+
+.pomo-clock svg {
+    position: absolute; inset: 0;
+    transform: rotate(-90deg);
+    width: 100%; height: 100%;
+}
+
+.pomo-clock__track { fill: none; stroke: var(--surface-3); stroke-width: 6; }
+.pomo-clock__progress {
+    fill: none;
+    stroke: var(--pomo-color, var(--accent));
+    stroke-width: 6;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 300ms linear;
+}
+
+.pomo-clock__time {
+    font-family: var(--font-mono);
+    font-size: 36px;
+    font-weight: var(--fw-semibold);
+    letter-spacing: -0.02em;
+    color: var(--text);
+}
+
+.pomo-clock__sub {
+    margin-top: 4px;
+    font-size: var(--fz-xs);
+    color: var(--text-muted);
+}
+
+.pomo-card__counter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: var(--s-3);
+}
+.pomo-card__counter-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--surface-3);
+    transition: background var(--dur) var(--ease);
+}
+.pomo-card__counter-dot.is-done { background: var(--pomo-color, var(--accent)); }
+
+.pomo-card__controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--s-2);
+    padding: var(--s-3) var(--s-4) var(--s-4);
+    border-top: 1px solid var(--border);
+    background: var(--surface-2);
+}
+
+.pomo-card__big {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--pomo-color, var(--accent));
+    color: #fff;
+    border: 0;
+    display: grid; place-items: center;
+    box-shadow: var(--shadow-2);
+    transition: transform var(--dur-fast) var(--ease), filter var(--dur-fast) var(--ease);
+}
+.pomo-card__big:hover { transform: scale(1.04); }
+.pomo-card__big:active { transform: scale(0.96); }
+
+.pomo-card__small {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    display: grid; place-items: center;
+    transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.pomo-card__small:hover { background: var(--surface-hover); color: var(--text); }
+
+/* ===== Launcher (диалог запуска) ===== */
+.pomo-launcher {
+    width: 360px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-3);
+    box-shadow: var(--shadow-3);
+    overflow: hidden;
+    animation: pop-in var(--dur-slow) var(--ease-out) both;
+}
+
+.pomo-launcher__header {
+    padding: var(--s-4);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+}
+
+.pomo-launcher__title {
+    font-weight: var(--fw-semibold);
+    font-size: var(--fz-md);
+    color: var(--text);
+    flex: 1 1 auto;
+}
+
+.pomo-launcher__body {
+    padding: var(--s-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-4);
+}
+
+.pomo-launcher__plan {
+    background: var(--accent-soft);
+    color: var(--accent);
+    padding: var(--s-3);
+    border-radius: var(--r-2);
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    font-size: var(--fz-sm);
+}
+
+.pomo-launcher__plan-num {
+    font-family: var(--font-mono);
+    font-size: var(--fz-xl);
+    font-weight: var(--fw-semibold);
+    line-height: 1;
+}
+
+.pomo-launcher__steppers {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: var(--s-2);
+}
+
+.stepper {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-2);
+    padding: var(--s-2);
+    text-align: center;
+    transition: border-color var(--dur-fast) var(--ease);
+}
+.stepper:hover { border-color: var(--border-strong); }
+
+.stepper__label {
+    font-size: var(--fz-xs);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.stepper__value {
+    font-family: var(--font-mono);
+    font-size: var(--fz-md);
+    font-weight: var(--fw-semibold);
+    margin: 4px 0 6px;
+    color: var(--text);
+}
+.stepper__controls {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-1);
+}
+.stepper__btn {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    display: grid; place-items: center;
+    transition: background var(--dur-fast) var(--ease);
+}
+.stepper__btn:hover { background: var(--surface-hover); color: var(--text); }
+
+.pomo-launcher__footer {
+    padding: var(--s-3) var(--s-4);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--s-2);
+    background: var(--surface-2);
+}
+
+@media (max-width: 640px) {
+    .pomo { right: 12px !important; bottom: 80px !important; left: auto !important; top: auto !important; }
+    .pomo-card, .pomo-launcher { width: calc(100vw - 24px); max-width: 360px; }
+}

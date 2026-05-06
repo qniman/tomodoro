@@ -4,14 +4,20 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "dev:host": "vite --host --strictPort"
     },
     "devDependencies": {
-        "@tailwindcss/vite": "^4.1.17",
-        "axios": "^1.11.0",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^2.0.0",
-        "tailwindcss": "^4.1.17",
         "vite": "^7.0.7"
+    },
+    "dependencies": {
+        "@tiptap/core": "^2.6.6",
+        "@tiptap/extension-link": "^2.6.6",
+        "@tiptap/extension-placeholder": "^2.6.6",
+        "@tiptap/extension-task-item": "^2.6.6",
+        "@tiptap/extension-task-list": "^2.6.6",
+        "@tiptap/starter-kit": "^2.6.6"
     }
 }

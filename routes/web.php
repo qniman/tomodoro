@@ -1,28 +1,30 @@
 <?php
 
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\WorkspaceController;
+use App\Http\Controllers\Auth\LogoutController;
+use App\Livewire\Auth\Login;
+use App\Livewire\Auth\Register;
+use App\Livewire\Workspace\CalendarView;
+use App\Livewire\Workspace\Settings;
+use App\Livewire\Workspace\TaskBoard;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
-    Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
-    Route::post('/login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
-
-    Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
-    Route::post('/register', [RegisteredUserController::class, 'store'])->name('register.store');
+    Route::get('/login', Login::class)->name('login');
+    Route::get('/register', Register::class)->name('register');
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/tasks', [WorkspaceController::class, 'tasks'])->name('workspace.tasks');
-    Route::get('/timer', [WorkspaceController::class, 'timer'])->name('workspace.timer');
-    Route::get('/calendar', [WorkspaceController::class, 'calendar'])->name('workspace.calendar');
-    Route::get('/api-playground', [WorkspaceController::class, 'apiDocs'])->name('workspace.api');
-    Route::get('/presets', [WorkspaceController::class, 'presets'])->name('workspace.presets');
-    Route::get('/settings', [WorkspaceController::class, 'settings'])->name('workspace.settings');
-    Route::post('/settings', [WorkspaceController::class, 'updateSettings'])->name('workspace.settings.update');
+    Route::redirect('/', '/app');
 
-    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+    // Задачи: одна реализация для разных «пресетов» — Сегодня / Входящие / Предстоящие / Все
+    Route::get('/app', TaskBoard::class)->name('app');
+    Route::get('/app/today', TaskBoard::class)->defaults('scope', 'today')->name('app.today');
+    Route::get('/app/inbox', TaskBoard::class)->defaults('scope', 'inbox')->name('app.inbox');
+    Route::get('/app/upcoming', TaskBoard::class)->defaults('scope', 'upcoming')->name('app.upcoming');
+    Route::get('/app/all', TaskBoard::class)->defaults('scope', 'all')->name('app.all');
+
+    Route::get('/app/calendar', CalendarView::class)->name('app.calendar');
+    Route::get('/app/settings', Settings::class)->name('app.settings');
+
+    Route::post('/logout', LogoutController::class)->name('logout');
 });

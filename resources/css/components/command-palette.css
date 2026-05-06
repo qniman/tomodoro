@@ -1,0 +1,137 @@
+/* ============================================================ *
+ * Command palette
+ * ============================================================ */
+
+.cmdk {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 12vh;
+    background: color-mix(in oklab, var(--bg-overlay, rgba(0,0,0,.45)) 100%, transparent);
+    backdrop-filter: blur(2px);
+    animation: fade-in var(--dur-fast) var(--ease-out) both;
+}
+
+.cmdk__panel {
+    width: min(640px, 92vw);
+    max-height: 70vh;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-3);
+    box-shadow: var(--shadow-3);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: pop-in var(--dur) var(--ease-out) both;
+}
+
+.cmdk__search {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    padding: var(--s-3) var(--s-4);
+    border-bottom: 1px solid var(--border);
+}
+.cmdk__search input {
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    font-size: var(--fz-md);
+    flex: 1 1 auto;
+    outline: none;
+}
+.cmdk__search input::placeholder { color: var(--text-subtle); }
+
+.cmdk__hint {
+    font-size: var(--fz-xs);
+    color: var(--text-subtle);
+}
+kbd.kbd {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    box-shadow: 0 1px 0 var(--border);
+}
+
+.cmdk__list {
+    overflow-y: auto;
+    padding: var(--s-2);
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.cmdk__group {
+    font-size: var(--fz-xs);
+    color: var(--text-subtle);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: var(--s-3) var(--s-3) var(--s-2);
+}
+
+.cmdk__item {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    padding: var(--s-2) var(--s-3);
+    border-radius: var(--r-1);
+    cursor: pointer;
+    color: var(--text);
+    font-size: var(--fz-sm);
+    transition: background var(--dur-fast) var(--ease);
+    border: 0;
+    background: transparent;
+    text-align: left;
+    width: 100%;
+}
+.cmdk__item:hover, .cmdk__item.is-active {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.cmdk__icon {
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--r-1);
+    background: var(--surface-2);
+    color: var(--text-muted);
+    flex-shrink: 0;
+    font-size: 13px;
+}
+.cmdk__item.is-active .cmdk__icon,
+.cmdk__item:hover .cmdk__icon { background: var(--surface); color: var(--accent); }
+
+.cmdk__title { font-weight: var(--fw-medium); flex: 1 1 auto; }
+.cmdk__sub { font-size: var(--fz-xs); color: var(--text-subtle); margin-top: 2px; }
+
+.cmdk__keys {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.cmdk__footer {
+    padding: var(--s-2) var(--s-4);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface-2);
+    color: var(--text-subtle);
+    font-size: var(--fz-xs);
+}
+.cmdk__footer-keys {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-3);
+}
