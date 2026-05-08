@@ -36,10 +36,10 @@
             <a href="{{ route('workspace.index') }}" wire:navigate class="btn btn--ghost btn--icon btn--sm" style="margin-right: var(--s-2);">
                 <x-ui.icon name="chevron-left" :size="16" />
             </a>
-            <div>
+            <div class="room-header-title">
                 <h1 class="ws__title">{{ $workspace->name }}</h1>
-                <span class="ws__subtitle">
-                    <x-ui.icon name="key" :size="12" style="vertical-align: middle;" />
+                <span class="room-header-code">
+                    <x-ui.icon name="key" :size="12" />
                     {{ $workspace->invite_code }}
                     <button
                         type="button"
@@ -71,7 +71,15 @@
                 <x-slot:trigger>
                     <x-ui.button variant="ghost" icon="more-h" size="sm" />
                 </x-slot:trigger>
-                <button type="button" class="dropdown__item" wire:click="$dispatch('open-room-invite')">
+                <button
+                    type="button"
+                    class="dropdown__item"
+                    x-data
+                    @click="
+                        navigator.clipboard?.writeText('{{ url('/workspace') }}?join={{ $workspace->invite_code }}');
+                        $dispatch('toast', {type: 'success', title: 'Ссылка скопирована', message: '{{ url('/workspace') }}?join={{ $workspace->invite_code }}'});
+                    "
+                >
                     <x-ui.icon name="share" :size="16" />
                     <span>Поделиться</span>
                 </button>
@@ -86,6 +94,7 @@
     </div>
 
     {{-- BODY --}}
+    <div class="ws__body">
     <div class="room-layout">
 
         {{-- ===== Колонка: Участники ===== --}}
@@ -110,16 +119,8 @@
                                 @endif
                             </span>
                             <span class="room-member__status"
-                                  :data-status="memberStatuses[{{ $member->user_id }}] ?? '{{ $member->status }}'">
-                                <template x-if="(memberStatuses[{{ $member->user_id }}] ?? '{{ $member->status }}') === 'focus'">
-                                    <span>🍅 В фокусе</span>
-                                </template>
-                                <template x-if="(memberStatuses[{{ $member->user_id }}] ?? '{{ $member->status }}') === 'pause'">
-                                    <span>☕ Пауза</span>
-                                </template>
-                                <template x-if="(memberStatuses[{{ $member->user_id }}] ?? '{{ $member->status }}') === 'away'">
-                                    <span>🌙 Отошёл</span>
-                                </template>
+                                  x-text="({'focus':'🍅 В фокусе','pause':'☕ Пауза','away':'🌙 Отошёл'})[memberStatuses[{{ $member->user_id }}] ?? '{{ $member->status }}']">
+                                {{ ['focus'=>'🍅 В фокусе','pause'=>'☕ Пауза','away'=>'🌙 Отошёл'][$member->status] ?? '🌙 Отошёл' }}
                             </span>
                         </div>
                         <div class="room-member__pomo" x-text="'🍅 ' + (memberPomodoros[{{ $member->user_id }}] ?? {{ $member->pomodoros_today }})">
@@ -263,6 +264,7 @@
         </div>
 
     </div>{{-- /room-layout --}}
+    </div>{{-- /ws__body --}}
 
     {{-- Модал настройки таймера --}}
     <x-ui.modal :show="$showTimerModal" size="sm"

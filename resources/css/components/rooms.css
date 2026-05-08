@@ -124,20 +124,55 @@
     letter-spacing: 0.08em;
 }
 
+/* ===== Заголовок комнаты ===== */
+
+.room-header-title {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+}
+
+.room-header-code {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-1);
+    font-family: var(--font-mono);
+    font-size: var(--fz-xs);
+    color: var(--text-subtle);
+    letter-spacing: 0.08em;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-full);
+    padding: 3px var(--s-2);
+}
+
 /* ===== Страница комнаты ===== */
+
+/*
+ * .workspace — grid с двумя строками (auto + 1fr).
+ * .ws попадает в первую auto-строку, поэтому height:100% не работает.
+ * Растягиваем .room-page на ВСЕ строки грида — тогда высота определённая.
+ */
+.room-page {
+    grid-row: 1 / -1;
+    height: auto;
+    min-height: 0;
+}
 
 .room-page .ws__body {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    padding: var(--s-4) var(--s-6) var(--s-5);
 }
 
 .room-layout {
     display: grid;
     grid-template-columns: 260px 1fr 300px;
     grid-template-rows: 1fr;
-    gap: var(--s-4);
-    height: 100%;
+    gap: var(--s-5);
+    flex: 1 1 auto;
+    min-height: 0;
     overflow: hidden;
 }
 

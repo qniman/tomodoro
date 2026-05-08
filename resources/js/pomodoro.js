@@ -257,6 +257,131 @@ function registerPomodoroMorphSync() {
     attach();
 }
 
+// ─── Drag ────────────────────────────────────────────────────────────────────
+
+const POMO_POS_KEY = 'tomodoro:pomo-pos';
+
+function applyPomoPos(x, y) {
+    const r = document.documentElement.style;
+    r.setProperty('--pomo-left',   x + 'px');
+    r.setProperty('--pomo-top',    y + 'px');
+    r.setProperty('--pomo-right',  'auto');
+    r.setProperty('--pomo-bottom', 'auto');
+}
+
+function loadPomoPos() {
+    try {
+        const pos = JSON.parse(localStorage.getItem(POMO_POS_KEY) || 'null');
+        if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
+            applyPomoPos(pos.x, pos.y);
+        }
+    } catch (_) { /* ignore */ }
+}
+
+function savePomoPos(x, y) {
+    try { localStorage.setItem(POMO_POS_KEY, JSON.stringify({ x, y })); } catch (_) { /* ignore */ }
+}
+
+function clampPos(el, x, y) {
+    const pad = 8;
+    const maxX = window.innerWidth  - el.offsetWidth  - pad;
+    const maxY = window.innerHeight - el.offsetHeight - pad;
+    return [Math.max(pad, Math.min(maxX, x)), Math.max(pad, Math.min(maxY, y))];
+}
+
+/** Зажимает виджет в рамки экрана — вызывается при изменении размера (bubble→card и обратно). */
+function clampPomoToViewport() {
+    const el = document.querySelector('.pomo');
+    if (!el) return;
+    const rs = document.documentElement.style;
+    const rawX = rs.getPropertyValue('--pomo-left');
+    if (!rawX || rawX === 'auto') return; // ещё не перетаскивали — right/bottom справятся сами
+    const x = parseFloat(rawX);
+    const y = parseFloat(rs.getPropertyValue('--pomo-top'));
+    if (isNaN(x) || isNaN(y)) return;
+    const [cx, cy] = clampPos(el, x, y);
+    if (cx !== x || cy !== y) {
+        applyPomoPos(cx, cy);
+        savePomoPos(cx, cy);
+    }
+}
+
+function initPomoDrag() {
+    const el = document.querySelector('.pomo');
+    if (!el || el._pomoDragInited) return;
+    el._pomoDragInited = true;
+
+    const THRESHOLD = 5;
+    let st = null; // drag state
+
+    el.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return;
+
+        // Принимаем drag только с bubble или шапки карточки
+        const fromBubble = e.target.closest('.pomo-bubble');
+        const fromHandle = e.target.closest('.pomo-card__handle');
+        if (!fromBubble && !fromHandle) return;
+
+        // Не начинаем drag с кнопок внутри шапки (свернуть, закрыть)
+        if (fromHandle && e.target.closest('button')) return;
+
+        const rect = el.getBoundingClientRect();
+        st = {
+            cx: e.clientX, cy: e.clientY,
+            ex: rect.left,  ey: rect.top,
+            id: e.pointerId, moved: false,
+        };
+        // НЕ вызываем setPointerCapture здесь — иначе click на кнопках внутри не сработает.
+        // Capture ставим только когда порог движения точно преодолён.
+    });
+
+    el.addEventListener('pointermove', (e) => {
+        if (!st || e.pointerId !== st.id) return;
+        const dx = e.clientX - st.cx;
+        const dy = e.clientY - st.cy;
+        if (!st.moved && Math.hypot(dx, dy) > THRESHOLD) {
+            st.moved = true;
+            // Теперь точно drag — захватываем pointer чтобы не терять события вне элемента
+            el.setPointerCapture(e.pointerId);
+        }
+        if (!st.moved) return;
+
+        const [x, y] = clampPos(el, st.ex + dx, st.ey + dy);
+        applyPomoPos(x, y);
+    });
+
+    el.addEventListener('pointerup', (e) => {
+        if (!st || e.pointerId !== st.id) return;
+        const wasMoved = st.moved;
+        st = null;
+
+        if (!wasMoved) return;
+
+        // Подавляем click, который браузер стреляет после pointerup
+        el.addEventListener('click', (ce) => {
+            ce.stopPropagation();
+            ce.preventDefault();
+        }, { once: true, capture: true });
+
+        // Сохраняем позицию
+        const rs = document.documentElement.style;
+        const x = parseFloat(rs.getPropertyValue('--pomo-left'));
+        const y = parseFloat(rs.getPropertyValue('--pomo-top'));
+        if (!isNaN(x) && !isNaN(y)) savePomoPos(x, y);
+    });
+
+    el.addEventListener('pointercancel', () => { st = null; });
+
+    // Когда виджет меняет размер (bubble → card → launcher), зажимаем в экран
+    if (typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(() => {
+            requestAnimationFrame(clampPomoToViewport);
+        }).observe(el);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function registerPomodoroWidget() {
     if (typeof window === 'undefined') {
         return;
@@ -266,4 +391,21 @@ export function registerPomodoroWidget() {
     window.pomoWidget = (initial) => createPomoWidgetState(initial);
 
     registerPomodoroMorphSync();
+
+    // Восстанавливаем позицию сразу (до рендера) — нет flash
+    loadPomoPos();
+
+    // Инициализируем drag после загрузки DOM
+    const tryInit = () => initPomoDrag();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', tryInit);
+    } else {
+        tryInit();
+    }
+
+    // После livewire:init виджет гарантированно в DOM
+    document.addEventListener('livewire:init', tryInit);
+
+    // После SPA-навигации — восстанавливаем позицию (CSS vars сбрасываются при hard reload, но не при navigate)
+    document.addEventListener('livewire:navigated', loadPomoPos);
 }

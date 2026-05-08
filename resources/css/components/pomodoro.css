@@ -4,12 +4,22 @@
 
 .pomo {
     position: fixed;
-    right: 24px;
-    bottom: 24px;
-    /* Выше нижней зоны тостов (они на том же tier), чтобы клики не перехватывались */
+    /* По умолчанию — правый нижний угол.
+       JS перезаписывает --pomo-left/top когда виджет перетаскивают,
+       --pomo-right/bottom переключаются в auto чтобы не конфликтовать. */
+    left:   var(--pomo-left,   auto);
+    top:    var(--pomo-top,    auto);
+    right:  var(--pomo-right,  24px);
+    bottom: var(--pomo-bottom, 24px);
     z-index: calc(var(--z-toast, 70) + 1);
     user-select: none;
+    touch-action: none;
 }
+
+/* Курсор grab на захватываемых областях */
+.pomo-bubble        { cursor: grab; }
+.pomo-bubble:active,
+.pomo-card__handle:active { cursor: grabbing; }
 
 
 
@@ -102,7 +112,7 @@
     display: flex;
     align-items: center;
     gap: var(--s-2);
-    cursor: default;
+    cursor: grab;
     border-bottom: 1px solid var(--border);
 }
 

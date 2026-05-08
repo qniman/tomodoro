@@ -21,6 +21,15 @@ class RoomIndex extends Component
 
     public string $joinCode = '';
 
+    public function mount(): void
+    {
+        $code = strtoupper(trim(request()->query('join', '')));
+        if ($code !== '') {
+            $this->joinCode = $code;
+            $this->joinRoom();
+        }
+    }
+
     public function render()
     {
         $myRooms = WorkspaceMember::where('user_id', Auth::id())
