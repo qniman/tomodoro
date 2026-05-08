@@ -536,6 +536,23 @@ button.tag-chip--btn {
  * Лист задач (доска): прокрутка только списка, ресайз панели
  * Ширина второй колонки и отступ: CSS-переменные из Alpine (taskBoardRailStyle).
  * ============================================================ */
+.task-board-page {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+.task-board-page__label-narrow,
+.task-board-page__btn-completed-narrow {
+    display: none;
+}
+
+.task-board__scrim {
+    display: none;
+}
+
 .task-board__rail {
     display: flex;
     flex-direction: row;
@@ -602,6 +619,128 @@ body.is-resizing-split .task-board__splitter {
 body.is-resizing-split {
     cursor: col-resize !important;
     user-select: none !important;
+}
+
+@media (max-width: 720px) {
+    .task-board-page .workspace__header--task-board {
+        height: auto;
+        min-height: 56px;
+        padding: var(--s-3) var(--s-4);
+        flex-wrap: wrap;
+        align-items: flex-start;
+        align-content: flex-start;
+        row-gap: var(--s-2);
+    }
+
+    .task-board-page .workspace__header--task-board .workspace__title {
+        width: 100%;
+        margin-right: 0;
+    }
+
+    .task-board-page__scope-meta {
+        display: none;
+    }
+
+    .task-board-page__toolbar {
+        width: 100%;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .task-board-page__search {
+        flex: 1 1 100%;
+        min-width: 0 !important;
+        max-width: none;
+    }
+
+    .task-board-page__label-wide,
+    .task-board-page__btn-completed-wide {
+        display: none !important;
+    }
+
+    .task-board-page__label-narrow {
+        display: inline !important;
+    }
+
+    .task-board-page__btn-completed-narrow {
+        display: inline-flex !important;
+    }
+
+    .workspace__main.workspace__main--task-board {
+        display: flex;
+        flex-direction: column;
+        padding: var(--s-3);
+        transition: none;
+    }
+
+    .task-board__splitter {
+        display: none;
+    }
+
+    .task-board__rail:not(:empty) {
+        display: flex;
+        position: fixed;
+        inset: 0;
+        z-index: 55;
+        flex-direction: column;
+        height: auto;
+        background: transparent;
+        pointer-events: none;
+    }
+
+    .task-board__rail:not(:empty) > * {
+        pointer-events: auto;
+    }
+
+    .task-board__scrim {
+        display: block;
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        border: 0;
+        padding: 0;
+        margin: 0;
+        background: color-mix(in oklab, black 46%, transparent);
+        cursor: pointer;
+    }
+
+    .task-board__detail {
+        position: relative;
+        z-index: 1;
+        flex: 1 1 auto;
+        min-height: 0;
+        height: 100%;
+        max-height: none;
+        border-radius: 0;
+        margin-top: 0;
+        background: var(--bg);
+        border: 0;
+        padding-top: env(safe-area-inset-top, 0);
+        padding-bottom: env(safe-area-inset-bottom, 0);
+        box-shadow: none;
+        animation: task-board-sheet-in var(--dur-slow) var(--ease-out) both;
+    }
+
+    @keyframes task-board-sheet-in {
+        from {
+            opacity: 0.92;
+            transform: translateX(12px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .task-board__detail {
+            animation: none;
+        }
+    }
+
+    .task-row .task-row__actions {
+        opacity: 1;
+    }
 }
 
 /* Выбор тегов в задаче */

@@ -1,22 +1,23 @@
 <div
-    style="display: contents"
+    class="task-board-page"
     x-data="taskBoardSplit({ minWidth: 280, maxWidth: 640 })"
     @mousemove.window="onMove($event)"
     @mouseup.window="endResize()"
+    @keydown.escape.window="if (!$wire.quickAddOpen && $wire.selectedTaskId) $wire.clearSelection()"
 >
-    <header class="workspace__header">
+    <header class="workspace__header workspace__header--task-board">
         <div class="workspace__title">
             <span>{{ $scopeLabel }}</span>
             @if($scopeMeta)
-                <span class="workspace__title-meta">· {{ $scopeMeta }}</span>
+                <span class="workspace__title-meta task-board-page__scope-meta">· {{ $scopeMeta }}</span>
             @endif
-            <span class="badge" style="margin-left: var(--s-2)">
+            <span class="badge task-board-page__badge-count" style="margin-left: var(--s-2)">
                 {{ $tasks->count() }} {{ trans_choice('задача|задачи|задач', $tasks->count()) }}
             </span>
         </div>
 
-        <div class="hstack gap-2">
-            <div class="input-group" style="height: 36px; min-width: 240px;">
+        <div class="hstack gap-2 task-board-page__toolbar">
+            <div class="input-group task-board-page__search" style="height: 36px; min-width: 240px;">
                 <span class="input-group__addon"><x-ui.icon name="search" :size="16" /></span>
                     <input
                         type="search"
@@ -27,12 +28,31 @@
                     />
             </div>
 
-            <x-ui.button variant="ghost" icon="{{ $showCompleted ? 'eye' : 'eye-off' }}" size="sm" wire:click="$toggle('showCompleted')">
+            <x-ui.button
+                variant="ghost"
+                icon="{{ $showCompleted ? 'eye' : 'eye-off' }}"
+                size="sm"
+                wire:click="$toggle('showCompleted')"
+                class="task-board-page__btn-completed-wide"
+                title="{{ $showCompleted ? 'Скрыть завершённые' : 'Показать завершённые' }}"
+            >
                 {{ $showCompleted ? 'Скрыть завершённые' : 'Показать завершённые' }}
             </x-ui.button>
 
-            <x-ui.button variant="primary" icon="plus" wire:click="openQuickAdd">
-                Новая задача
+            <x-ui.button
+                variant="ghost"
+                icon="{{ $showCompleted ? 'eye' : 'eye-off' }}"
+                size="sm"
+                wire:click="$toggle('showCompleted')"
+                iconOnly
+                class="task-board-page__btn-completed-narrow"
+                title="{{ $showCompleted ? 'Скрыть завершённые' : 'Показать завершённые' }}"
+                aria-label="{{ $showCompleted ? 'Скрыть завершённые' : 'Показать завершённые' }}"
+            ></x-ui.button>
+
+            <x-ui.button variant="primary" icon="plus" size="sm" wire:click="openQuickAdd">
+                <span class="task-board-page__label-wide">Новая задача</span>
+                <span class="task-board-page__label-narrow">Добавить</span>
             </x-ui.button>
         </div>
     </header>
@@ -199,6 +219,11 @@
 
         <div class="task-board__rail">
             @if($selectedTask)
+                <div
+                    class="task-board__scrim"
+                    wire:click="clearSelection"
+                    aria-hidden="true"
+                ></div>
                 <div
                     class="task-board__splitter"
                     role="separator"

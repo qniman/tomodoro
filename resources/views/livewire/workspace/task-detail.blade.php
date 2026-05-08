@@ -170,9 +170,10 @@
                     wire:key внутри: при смене задачи блок целиком пересоздаётся → новый Alpine/Tiptap.
                 --}}
                 <div class="editor-host"
+                     wire:ignore
+                     wire:key="editor-{{ $task->id }}"
                      x-data="richEditor($wire, 'descriptionHtml')"
                      x-init="init()"
-                     wire:ignore
                 >
                     <div class="editor">
                         <div class="editor__toolbar" data-toolbar></div>

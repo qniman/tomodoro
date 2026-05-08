@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Renderless;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -102,6 +103,18 @@ class TaskDetail extends Component
             $task->description_html = $value;
             $task->save();
         }
+    }
+
+    /** Сохранение HTML из Tiptap без $wire.set по полю — иначе Livewire морфит DOM и ломает ProseMirror. */
+    #[Renderless]
+    public function saveDescriptionHtmlFromEditor(string $html): void
+    {
+        $task = $this->task();
+        if (! $task) {
+            return;
+        }
+        $task->description_html = $html;
+        $task->save();
     }
 
     public function updatedDueAt($value): void

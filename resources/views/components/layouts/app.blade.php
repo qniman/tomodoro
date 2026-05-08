@@ -18,10 +18,42 @@
     <div
         class="app-shell"
         x-data
-        x-bind:class="{ 'app-shell--compact': $store.layout.compactSidebar }"
+        x-bind:class="{ 'app-shell--compact': $store.layout.compactSidebar, 'app-shell--mobile-drawer-open': $store.layout.mobileSidebarOpen }"
+        @keydown.escape.window="$store.layout.mobileSidebarOpen && $store.layout.closeMobileSidebar()"
+        x-init="
+            document.addEventListener('livewire:navigated', () => Alpine.store('layout').closeMobileSidebar());
+            window.addEventListener('resize', () => {
+                if (window.matchMedia('(min-width: 921px)').matches) {
+                    Alpine.store('layout').closeMobileSidebar();
+                }
+            });
+        "
     >
-        <aside class="sidebar" aria-label="Основная навигация">
-            <a href="{{ route('app') }}" wire:navigate.hover class="sidebar__brand">
+        <header class="app-mobile-bar">
+            <a href="{{ route('app') }}" wire:navigate class="app-mobile-bar__brand" aria-label="{{ config('app.name', 'Tomodoro') }}">
+                <span class="sidebar__brand-mark">
+                    <x-ui.icon name="tomato" :size="16" />
+                </span>
+            </a>
+        </header>
+
+        <div
+            class="app-drawer-scrim"
+            aria-hidden="true"
+            x-cloak
+            x-show="$store.layout.mobileSidebarOpen"
+            x-transition.opacity.duration.200ms
+            @click="$store.layout.closeMobileSidebar()"
+        ></div>
+
+        <div class="app-shell__body">
+            <aside class="sidebar" id="app-sidebar" aria-label="Основная навигация">
+            <a
+                href="{{ route('app') }}"
+                wire:navigate.hover
+                class="sidebar__brand"
+                @click="$store.layout.closeMobileSidebar()"
+            >
                 <span class="sidebar__brand-mark">
                     <x-ui.icon name="tomato" :size="16" />
                 </span>
@@ -43,6 +75,7 @@
             </button>
 
             <nav class="sidebar__nav">
+            <div class="sidebar__nav-block sidebar__nav-block--tabs-on-mobile">
                 @foreach($primaryNav as $item)
                     @php
                         $isActive = $currentRoute === $item['route']
@@ -59,7 +92,7 @@
                 @endforeach
 
                 <hr class="sidebar__divider" role="presentation" />
-
+            </div>
                 <a
                     href="{{ route('app.settings', ['tab' => 'tags']) }}"
                     wire:navigate
@@ -73,7 +106,7 @@
 
                 <button
                     type="button"
-                    class="sidebar__narrow"
+                    class="sidebar__narrow sidebar__narrow--desktop-only"
                     @click.prevent="$store.layout.toggleSidebarCompact()"
                     title="Компактная боковая панель"
                 >
@@ -118,6 +151,38 @@
         <div class="workspace">
             {{ $slot }}
         </div>
+        </div>
+
+        <nav class="app-mobile-tabbar" aria-label="Основные разделы">
+            @foreach($primaryNav as $item)
+                @php
+                    $isTabActive = $currentRoute === $item['route']
+                        || ($item['route'] === 'app.inbox' && $currentRoute === 'app');
+                @endphp
+                <a
+                    href="{{ \Illuminate\Support\Facades\Route::has($item['route']) ? route($item['route']) : '#' }}"
+                    wire:navigate
+                    class="app-mobile-tabbar__tab {{ $isTabActive ? 'is-active' : '' }}"
+                >
+                    <span class="app-mobile-tabbar__icon">
+                        <x-ui.icon :name="$item['icon']" :size="22" />
+                    </span>
+                    <span class="app-mobile-tabbar__label">{{ $item['label'] }}</span>
+                </a>
+            @endforeach
+            <button
+                type="button"
+                class="app-mobile-tabbar__tab app-mobile-tabbar__tab--more {{ $tagsSettingsActive || $currentRoute === 'app.settings' ? 'is-active-soft' : '' }}"
+                :class="{ 'is-active': $store.layout.mobileSidebarOpen }"
+                aria-label="Ещё: поиск, проекты, профиль"
+                @click="$store.layout.toggleMobileSidebar()"
+            >
+                <span class="app-mobile-tabbar__icon">
+                    <x-ui.icon name="more-h" :size="22" />
+                </span>
+                <span class="app-mobile-tabbar__label">Ещё</span>
+            </button>
+        </nav>
     </div>
 
     <livewire:workspace.manage-projects-modal />

@@ -3,18 +3,38 @@
  * ============================================================ */
 
 .app-shell {
-    display: grid;
-    grid-template-columns: var(--sidebar-w) 1fr;
-    grid-template-rows: 100vh;
+    display: flex;
+    flex-direction: column;
     width: 100%;
     height: 100vh;
     overflow: hidden;
     background: var(--bg);
 }
 
-.app-shell--compact {
+.app-shell__body {
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-columns: var(--sidebar-w) 1fr;
+    grid-template-rows: 1fr;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.app-shell--compact .app-shell__body {
     grid-template-columns: var(--sidebar-w-compact) 1fr;
 }
+
+.app-mobile-bar {
+    display: none;
+    flex-shrink: 0;
+}
+
+.app-mobile-tabbar {
+    display: none;
+    flex-shrink: 0;
+}
+
+/* скрим выезжающего меню: видимость задаёт Alpine (x-show) + правила ниже для desktop */
 
 /* ----- Sidebar ----- */
 .sidebar {
@@ -377,6 +397,7 @@ body.is-resizing-split .workspace__main.workspace__main--task-board {
     grid-template-rows: auto 1fr;
     overflow: hidden;
     min-width: 0;
+    min-height: 0;
 }
 
 .workspace__header {
@@ -560,24 +581,173 @@ body.is-resizing-split .workspace__main.workspace__main--task-board {
 }
 
 @media (max-width: 920px) {
-    .app-shell {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr;
-    }
-    .sidebar {
-        grid-row: 1; grid-column: 1;
-        height: auto;
-        flex-direction: row;
+    .app-mobile-bar {
+        display: flex;
         align-items: center;
-        padding: var(--s-2) var(--s-3);
-        overflow-x: auto;
+        justify-content: flex-start;
+        gap: var(--s-3);
+        height: 52px;
+        padding: 0 var(--s-4);
+        padding-left: max(var(--s-4), env(safe-area-inset-left, 0px));
+        padding-right: max(var(--s-4), env(safe-area-inset-right, 0px));
+        padding-top: env(safe-area-inset-top, 0px);
+        border-bottom: 1px solid var(--border);
+        background: var(--surface-2);
+        z-index: calc(var(--z-sidebar) + 5);
     }
-    .sidebar__nav {
-        flex-direction: row;
-        overflow-x: auto;
+
+    .app-mobile-bar__brand {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: var(--s-1);
+        margin: calc(-1 * var(--s-1));
+        border-radius: var(--r-2);
+        color: inherit;
     }
-    .sidebar__section { margin-top: 0; margin-left: var(--s-3); }
-    .sidebar__footer { display: none; }
-    .workspace { grid-row: 2; grid-column: 1; }
-    .workspace__main { padding: var(--s-4); }
+
+    .app-mobile-bar__brand:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+    }
+
+    .app-mobile-tabbar {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        align-items: stretch;
+        min-height: calc(52px + env(safe-area-inset-bottom, 0px));
+        padding: var(--s-2) max(var(--s-1), env(safe-area-inset-left, 0px)) calc(var(--s-2) + env(safe-area-inset-bottom, 0px)) max(var(--s-1), env(safe-area-inset-right, 0px));
+        border-top: 1px solid var(--border);
+        background: color-mix(in oklab, var(--surface-2) 92%, var(--bg));
+        backdrop-filter: blur(12px);
+        z-index: calc(var(--z-sidebar) + 6);
+    }
+
+    .app-mobile-tabbar__tab {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        min-width: 0;
+        min-height: 48px;
+        padding: var(--s-1);
+        border: 0;
+        border-radius: var(--r-2);
+        background: transparent;
+        color: var(--text-muted);
+        font-size: 0.625rem;
+        font-weight: var(--fw-medium);
+        letter-spacing: 0.02em;
+        text-decoration: none;
+        cursor: pointer;
+        transition:
+            color var(--dur-fast) var(--ease),
+            background var(--dur-fast) var(--ease);
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .app-mobile-tabbar__tab:hover {
+        background: var(--surface-hover);
+    }
+
+    .app-mobile-tabbar__tab.is-active {
+        color: var(--accent);
+    }
+
+    .app-mobile-tabbar__tab.is-active .app-mobile-tabbar__icon {
+        color: var(--accent);
+    }
+
+    .app-mobile-tabbar__tab.is-active-soft:not(.is-active) {
+        color: var(--text);
+    }
+
+    .app-mobile-tabbar__icon {
+        display: grid;
+        place-items: center;
+        color: var(--text-subtle);
+    }
+
+    .app-mobile-tabbar__label {
+        line-height: 1.1;
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
+    }
+
+    .sidebar__nav-block--tabs-on-mobile {
+        display: none;
+    }
+
+    .sidebar__narrow--desktop-only {
+        display: none !important;
+    }
+
+    .app-shell__body {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(0, 1fr);
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: min(300px, calc(100vw - 48px));
+        max-width: 320px;
+        z-index: calc(var(--z-sidebar) + 15);
+        grid-column: auto;
+        grid-row: auto;
+        transform: translateX(-100%);
+        transition: transform var(--dur-slow) var(--ease-out);
+        flex-direction: column;
+        box-shadow: none;
+        overflow: hidden;
+        padding-top: max(var(--s-4), env(safe-area-inset-top, 0px));
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .sidebar {
+            transition: none;
+        }
+    }
+
+    .app-shell--mobile-drawer-open .sidebar {
+        transform: translateX(0);
+        box-shadow: var(--shadow-2);
+    }
+
+    .app-drawer-scrim {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: calc(var(--z-sidebar) + 8);
+        background: color-mix(in oklab, black 42%, transparent);
+        cursor: pointer;
+    }
+
+    body:has(.app-shell--mobile-drawer-open) {
+        overflow: hidden;
+        touch-action: none;
+    }
+
+    .workspace {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .workspace__main {
+        padding: var(--s-4);
+    }
+}
+
+@media (min-width: 921px) {
+    .app-drawer-scrim[x-cloak],
+    .app-drawer-scrim {
+        display: none !important;
+    }
 }

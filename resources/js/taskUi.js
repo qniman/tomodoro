@@ -12,6 +12,7 @@ document.addEventListener('alpine:init', () => {
         dragging: false,
         startX: 0,
         startW: 420,
+        mobileMq: null,
 
         init() {
             try {
@@ -23,6 +24,23 @@ document.addEventListener('alpine:init', () => {
             } catch (_) {
                 /* ignore */
             }
+
+            if (typeof window !== 'undefined' && window.matchMedia) {
+                this.mobileMq = window.matchMedia('(max-width: 720px)');
+                const onMq = () => this.syncMobileScrollLock();
+                if (this.mobileMq.addEventListener) {
+                    this.mobileMq.addEventListener('change', onMq);
+                } else if (this.mobileMq.addListener) {
+                    this.mobileMq.addListener(onMq);
+                }
+                this.$nextTick(() => this.syncMobileScrollLock());
+            }
+        },
+
+        syncMobileScrollLock() {
+            const mobile = Boolean(this.mobileMq?.matches);
+            const open = Boolean(this.$wire?.selectedTaskId);
+            document.body.style.overflow = mobile && open ? 'hidden' : '';
         },
 
         persist() {
@@ -68,6 +86,17 @@ document.addEventListener('alpine:init', () => {
         },
 
         taskBoardRailStyle() {
+            if (typeof queueMicrotask === 'function') {
+                queueMicrotask(() => this.syncMobileScrollLock());
+            }
+
+            if (typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches) {
+                return {
+                    '--task-rail-width': '0px',
+                    '--task-board-gap': '0px',
+                };
+            }
+
             const open = Boolean(this.$wire?.selectedTaskId);
 
             if (!open) {

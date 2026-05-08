@@ -1,8 +1,7 @@
 /**
- * Tiptap для Livewire: `editor-host` с x-data вне `wire:ignore`; внутри один `.editor` с ignore.
- * Цепочки `chain().focus().…` для кнопок и синхронный refresh тулбара на каждом транзакшне
- * дают «Applying a mismatched transaction» рядом с Livewire-морфом.
- * Команды на тулбаре: `view.focus()` + следующий кадр + `commands.*` без focus в chain.
+ * Livewire + Alpine + Tiptap: экземпляр Editor только в WeakMap по узлу [data-content],
+ * тулбар вызывает command(editor) после getEditor(content) — без Alpine this.editor и stale closures.
+ * Сохранение: saveDescriptionHtmlFromEditor для descriptionHtml (без $wire.set морфинга HTML).
  */
 
 import { Editor } from '@tiptap/core';
@@ -11,6 +10,85 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Link from '@tiptap/extension-link';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
+
+/** @type {WeakMap<Element, Editor>} ключ — контейнер [data-content] */
+const EDITORS = new WeakMap();
+
+function getEditor(contentEl) {
+    return EDITORS.get(contentEl) ?? null;
+}
+
+function setEditor(contentEl, editor) {
+    EDITORS.set(contentEl, editor);
+}
+
+function destroyEditor(contentEl) {
+    const ed = getEditor(contentEl);
+    if (! ed) return;
+    try { ed.destroy(); } catch (_) { /* ignore */ }
+    EDITORS.delete(contentEl);
+}
+
+/** Команды: editor подставляется только внутри runCommand (свежий из WeakMap). */
+const COMMAND_RUN = {
+    bold(ed) {
+        ed.chain().focus().toggleBold().run();
+    },
+
+    italic(ed) {
+        ed.chain().focus().toggleItalic().run();
+    },
+
+    strike(ed) {
+        ed.chain().focus().toggleStrike().run();
+    },
+
+    h1(ed) {
+        ed.chain().focus().toggleHeading({ level: 1 }).run();
+    },
+
+    h2(ed) {
+        ed.chain().focus().toggleHeading({ level: 2 }).run();
+    },
+
+    bullet(ed) {
+        ed.chain().focus().toggleBulletList().run();
+    },
+
+    ord(ed) {
+        ed.chain().focus().toggleOrderedList().run();
+    },
+
+    todo(ed) {
+        ed.chain().focus().toggleTaskList().run();
+    },
+
+    quote(ed) {
+        ed.chain().focus().toggleBlockquote().run();
+    },
+
+    code(ed) {
+        ed.chain().focus().toggleCodeBlock().run();
+    },
+
+    link(ed) {
+        if (ed.isActive('link')) {
+            ed.chain().focus().unsetLink().run();
+            return;
+        }
+        const url = window.prompt('URL ссылки');
+        if (! url) return;
+        ed.chain().focus().setLink({ href: url }).run();
+    },
+
+    undo(ed) {
+        ed.chain().focus().undo().run();
+    },
+
+    redo(ed) {
+        ed.chain().focus().redo().run();
+    },
+};
 
 const ICONS = {
     bold:    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h6a4 4 0 0 1 0 8H7zM7 12h7a4 4 0 0 1 0 8H7z"/></svg>',
@@ -28,31 +106,104 @@ const ICONS = {
     redo:    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 15-6.7L21 13"/></svg>',
 };
 
-function destroyOrphan(contentEl, known) {
-    const orphan = /** @type {{ editor?: Editor }} */ (contentEl)?.editor;
-    if (orphan && orphan !== known && typeof orphan.destroy === 'function') {
-        try { orphan.destroy(); } catch (e) { /* ignore */ }
-    }
-}
-
-const COMMANDS = [
-    { id: 'bold',     label: 'Жирный',      icon: 'bold',   run: (ed) => ed.commands.toggleBold(),       isActive: (ed) => ed.isActive('bold') },
-    { id: 'italic',   label: 'Курсив',      icon: 'italic', run: (ed) => ed.commands.toggleItalic(),     isActive: (ed) => ed.isActive('italic') },
-    { id: 'strike',   label: 'Зачёркнутый', icon: 'strike', run: (ed) => ed.commands.toggleStrike(),     isActive: (ed) => ed.isActive('strike') },
+/** Порядок тулбара + метаданные (без замыкания на editor в DOM listener). */
+const TOOLBAR = [
+    {
+        id: 'bold',
+        icon: 'bold',
+        label: 'Жирный',
+        active: (ed) => ed.isActive('bold'),
+        enabled: (ed) => ed.can().toggleBold(),
+    },
+    {
+        id: 'italic',
+        icon: 'italic',
+        label: 'Курсив',
+        active: (ed) => ed.isActive('italic'),
+        enabled: (ed) => ed.can().toggleItalic(),
+    },
+    {
+        id: 'strike',
+        icon: 'strike',
+        label: 'Зачёркнутый',
+        active: (ed) => ed.isActive('strike'),
+        enabled: (ed) => ed.can().toggleStrike(),
+    },
     { divider: true },
-    { id: 'h1',       label: 'Заголовок 1', icon: 'h1',     run: (ed) => ed.commands.toggleHeading({ level: 1 }), isActive: (ed) => ed.isActive('heading', { level: 1 }) },
-    { id: 'h2',       label: 'Заголовок 2', icon: 'h2',     run: (ed) => ed.commands.toggleHeading({ level: 2 }), isActive: (ed) => ed.isActive('heading', { level: 2 }) },
+    {
+        id: 'h1',
+        icon: 'h1',
+        label: 'Заголовок 1',
+        active: (ed) => ed.isActive('heading', { level: 1 }),
+        enabled: (ed) => ed.can().toggleHeading({ level: 1 }),
+    },
+    {
+        id: 'h2',
+        icon: 'h2',
+        label: 'Заголовок 2',
+        active: (ed) => ed.isActive('heading', { level: 2 }),
+        enabled: (ed) => ed.can().toggleHeading({ level: 2 }),
+    },
     { divider: true },
-    { id: 'bullet',   label: 'Список',      icon: 'list',   run: (ed) => ed.commands.toggleBulletList(),  isActive: (ed) => ed.isActive('bulletList') },
-    { id: 'ord',      label: 'Нумерация',   icon: 'ord',    run: (ed) => ed.commands.toggleOrderedList(), isActive: (ed) => ed.isActive('orderedList') },
-    { id: 'todo',     label: 'Чек-лист',    icon: 'todo',   run: (ed) => ed.commands.toggleTaskList(),    isActive: (ed) => ed.isActive('taskList') },
+    {
+        id: 'bullet',
+        icon: 'list',
+        label: 'Список',
+        active: (ed) => ed.isActive('bulletList'),
+        enabled: (ed) => ed.can().toggleBulletList(),
+    },
+    {
+        id: 'ord',
+        icon: 'ord',
+        label: 'Нумерация',
+        active: (ed) => ed.isActive('orderedList'),
+        enabled: (ed) => ed.can().toggleOrderedList(),
+    },
+    {
+        id: 'todo',
+        icon: 'todo',
+        label: 'Чек-лист',
+        active: (ed) => ed.isActive('taskList'),
+        enabled: (ed) => ed.can().toggleTaskList(),
+    },
     { divider: true },
-    { id: 'quote',    label: 'Цитата',      icon: 'quote',  run: (ed) => ed.commands.toggleBlockquote(), isActive: (ed) => ed.isActive('blockquote') },
-    { id: 'code',     label: 'Код',         icon: 'code',   run: (ed) => ed.commands.toggleCodeBlock(),   isActive: (ed) => ed.isActive('codeBlock') },
-    { id: 'link',     label: 'Ссылка',      icon: 'link',   action: 'link',                              isActive: (ed) => ed.isActive('link') },
+    {
+        id: 'quote',
+        icon: 'quote',
+        label: 'Цитата',
+        active: (ed) => ed.isActive('blockquote'),
+        enabled: (ed) => ed.can().toggleBlockquote(),
+    },
+    {
+        id: 'code',
+        icon: 'code',
+        label: 'Код',
+        active: (ed) => ed.isActive('codeBlock'),
+        enabled: (ed) => ed.can().toggleCodeBlock(),
+    },
+    {
+        id: 'link',
+        icon: 'link',
+        label: 'Ссылка',
+        active: (ed) => ed.isActive('link'),
+        enabled: (ed) =>
+            ed.isActive('link') ? ed.can().unsetLink() : ed.can().setLink({ href: 'https://' }),
+    },
     { divider: true },
-    { id: 'undo',     label: 'Отменить',    icon: 'undo',   run: (ed) => ed.commands.undo(),             isActive: () => false },
-    { id: 'redo',     label: 'Повторить',   icon: 'redo',   run: (ed) => ed.commands.redo(),            isActive: () => false },
+    {
+        id: 'undo',
+        icon: 'undo',
+        label: 'Отменить',
+        active: () => false,
+        enabled: (ed) => ed.can().undo(),
+    },
+    {
+        id: 'redo',
+        icon: 'redo',
+        label: 'Повторить',
+        active: () => false,
+        enabled: (ed) => ed.can().redo(),
+    },
 ];
 
 export function registerRichEditor() {
@@ -62,139 +213,109 @@ export function registerRichEditor() {
         return {
             wire,
             prop,
-            editor: null,
             saveTimer: null,
-            _toolbarRefreshRaf: null,
-            _lastWireId: null,
 
             init() {
                 const shell = this.$el;
                 const content = shell.querySelector('[data-content]');
                 const toolbar = shell.querySelector('[data-toolbar]');
+
                 if (! content || ! toolbar) {
                     console.warn('[richEditor] missing data-content / data-toolbar', shell);
                     return;
                 }
 
-                // Проверяем, изменился ли компонент Livewire (смена задачи)
-                const currentWireId = this.wire?.__object?.id || this.wire?.id || null;
-                if (this._lastWireId !== null && this._lastWireId !== currentWireId) {
-                    // Компонент изменился, перезагружаем редактор
-                    this.destroy();
-                }
-                this._lastWireId = currentWireId;
+                destroyEditor(content);
 
-                destroyOrphan(content, this.editor);
-                if (this.editor) {
-                    try { this.editor.destroy(); } catch (e) { /* ignore */ }
-                    this.editor = null;
-                }
-                toolbar.innerHTML = '';
-                content.textContent = '';
+                content.innerHTML = '';
+
+                const mount = document.createElement('div');
+                content.appendChild(mount);
 
                 const initial = this.readWire() || '';
 
-                const scheduleToolbarRefresh = () => {
-                    if (this._toolbarRefreshRaf != null) cancelAnimationFrame(this._toolbarRefreshRaf);
-                    this._toolbarRefreshRaf = requestAnimationFrame(() => {
-                        this._toolbarRefreshRaf = null;
-                        if (! this.editor || this.editor.isDestroyed) return;
-                        this.refreshToolbar(toolbar);
-                    });
-                };
+                const editorInstance = new Editor({
+                    element: mount,
 
-                this.editor = new Editor({
-                    element: content,
                     extensions: [
                         StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
                         Placeholder.configure({ placeholder: 'Опишите задачу — заметки, ссылки, чек-лист…' }),
                         Link.configure({
                             openOnClick: false,
-                            autolink: true,
+                            autolink: false,
                             HTMLAttributes: { rel: 'noopener noreferrer nofollow' },
                         }),
                         TaskList,
                         TaskItem.configure({ nested: true }),
                     ],
+
                     content: initial,
+
                     onUpdate: ({ editor }) => {
                         if (editor.isDestroyed) return;
-                        scheduleToolbarRefresh();
-                        const html = editor.isEmpty ? '' : editor.getHTML();
                         clearTimeout(this.saveTimer);
+
                         this.saveTimer = setTimeout(() => {
-                            if (! this.editor || this.editor.isDestroyed) return;
+                            const live = getEditor(content);
+                            if (! live || live.isDestroyed || live !== editor) return;
+
+                            const html = live.isEmpty ? '' : live.getHTML();
                             this.pushWire(html);
-                        }, 600);
+                        }, 500);
+
+                        const live = getEditor(content);
+                        if (live && ! live.isDestroyed && live === editor) {
+                            this.refreshToolbar(toolbar, live);
+                        }
                     },
-                    onSelectionUpdate: () => scheduleToolbarRefresh(),
-                    onTransaction: () => scheduleToolbarRefresh(),
+
+                    onSelectionUpdate: ({ editor }) => {
+                        const live = getEditor(content);
+                        if (! live || live.isDestroyed || live !== editor) return;
+                        this.refreshToolbar(toolbar, live);
+                    },
                 });
 
-                this.buildToolbar(toolbar);
+                setEditor(content, editorInstance);
 
-                // Слушаем обновления Livewire - если содержимое изменилось извне, перезагружаем
-                const handleLivewireUpdate = () => {
-                    if (! this.editor || this.editor.isDestroyed) return;
-                    const newContent = this.readWire() || '';
-                    const currentContent = this.editor.getHTML();
-                    
-                    // Если содержимое отличается от того, что в редакторе, обновляем его
-                    if (newContent !== currentContent) {
-                        console.log('[richEditor] content changed externally, reloading editor');
-                        this.editor.commands.setContent(newContent);
-                    }
+                this.buildToolbar(toolbar, content);
+
+                const cleanup = () => {
+                    clearTimeout(this.saveTimer);
+                    this.saveTimer = null;
+                    destroyEditor(content);
                 };
 
-                // Слушаем события Livewire
-                if (window.addEventListener && this.wire) {
-                    window.addEventListener('livewire:updated', handleLivewireUpdate);
-                }
-
-                const cleanup = () => this.destroy();
-                window.addEventListener('livewire:navigating', cleanup, { once: true });
                 shell.addEventListener('alpine:destroyed', cleanup, { once: true });
-            },
-
-            destroy() {
-                clearTimeout(this.saveTimer);
-                if (this._toolbarRefreshRaf != null) cancelAnimationFrame(this._toolbarRefreshRaf);
-                this._toolbarRefreshRaf = null;
-                this.editor?.destroy();
-                this.editor = null;
+                window.addEventListener('livewire:navigating', cleanup, { once: true });
             },
 
             readWire() {
                 try {
                     const w = this.wire;
-                    if (! w) {
-                        console.warn('[richEditor] wire not available');
-                        return '';
-                    }
-                    // Livewire 3: используем getter методы если доступны
+                    if (! w) return '';
                     if (typeof w.get === 'function') {
-                        const val = w.get(this.prop);
-                        return val ?? '';
+                        return w.get(this.prop) ?? '';
                     }
-                    // Fallback: прямой доступ к свойству
                     if (this.prop in w) {
                         return w[this.prop] ?? '';
                     }
+
                     return '';
-                } catch (e) {
-                    console.warn('[richEditor] readWire error', e);
+                } catch {
                     return '';
                 }
             },
 
             pushWire(html) {
-                const w = this.wire;
-                if (! w) {
-                    console.warn('[richEditor] wire not available for push');
-                    return;
-                }
                 try {
-                    // Livewire 3: используем setter методы если доступны
+                    const w = this.wire;
+                    if (! w) return;
+
+                    if (this.prop === 'descriptionHtml' && typeof w.call === 'function') {
+                        w.call('saveDescriptionHtmlFromEditor', html);
+                        return;
+                    }
                     if (typeof w.set === 'function') {
                         w.set(this.prop, html);
                         return;
@@ -203,113 +324,86 @@ export function registerRichEditor() {
                         w.$set(this.prop, html);
                         return;
                     }
-                    // Fallback: прямое присваивание
+
                     w[this.prop] = html;
                 } catch (e) {
-                    console.error('[richEditor] pushWire failed', e);
+                    console.error('[richEditor] push failed', e);
                 }
             },
 
-            deferEditorCommand(fn) {
-                const inst = this.editor;
-                if (! inst || inst.isDestroyed || ! inst.view) {
-                    console.warn('[richEditor] editor not ready for command');
-                    return;
-                }
+            /**
+             * @param {Element} contentEl узел [data-content]
+             * @param {string} cmdId ключ COMMAND_RUN
+             */
+            runCommand(contentEl, cmdId) {
+                const runner = COMMAND_RUN[cmdId];
+                if (! runner || typeof runner !== 'function') return;
+
+                const ed = getEditor(contentEl);
+
+                if (! ed || ed.isDestroyed) return;
+
                 try {
-                    // Применяем команду синхронно, но только если view готов
-                    if (typeof inst.view.focus === 'function') {
-                        inst.view.focus();
-                    }
-                    // Выполняем команду на следующем микротаске, чтобы дать focus время примениться
-                    queueMicrotask(() => {
-                        const ed = this.editor;
-                        if (! ed || ed.isDestroyed || ! ed.view) {
-                            console.warn('[richEditor] editor destroyed before command execution');
-                            return;
-                        }
-                        try {
-                            fn(ed);
-                        } catch (e) {
-                            console.error('[richEditor] command execution failed', e);
-                        }
-                    });
+                    runner(ed);
+                    const tb = this.$el?.querySelector('[data-toolbar]');
+                    if (tb) this.refreshToolbar(tb, ed);
                 } catch (e) {
-                    console.error('[richEditor] deferEditorCommand setup failed', e);
+                    console.error('[richEditor] command failed', e);
                 }
             },
 
-            buildToolbar(toolbar) {
+            buildToolbar(toolbar, contentEl) {
                 toolbar.innerHTML = '';
-                COMMANDS.forEach((cmd) => {
-                    if (cmd.divider) {
-                        const d = document.createElement('span');
-                        d.className = 'editor__divider';
-                        toolbar.appendChild(d);
+
+                TOOLBAR.forEach((item) => {
+                    if (item.divider) {
+                        const divider = document.createElement('span');
+                        divider.className = 'editor__divider';
+                        toolbar.appendChild(divider);
                         return;
                     }
+
+                    const id = /** @type {string} */ (item.id);
+
                     const btn = document.createElement('button');
+
                     btn.type = 'button';
                     btn.className = 'editor__btn';
-                    btn.dataset.command = cmd.id || '';
-                    btn.title = cmd.label || '';
-                    btn.setAttribute('aria-label', cmd.label || '');
-                    btn.innerHTML = ICONS[cmd.icon || 'bold'] || '';
-                    btn.addEventListener('mousedown', (e) => e.preventDefault());
-                    btn.addEventListener('click', (e) => {
+                    btn.dataset.command = id;
+                    btn.title = item.label;
+                    btn.setAttribute('aria-label', item.label);
+                    btn.innerHTML = ICONS[item.icon || id] ?? '';
+
+                    btn.addEventListener('mousedown', (e) => {
                         e.preventDefault();
-                        if (cmd.action === 'link') {
-                            this.deferEditorCommand(() => this.applyLinkToggle());
-                            return;
-                        }
-                        const runFn = cmd.run;
-                        if (! runFn) return;
-                        this.deferEditorCommand((ed) => {
-                            try {
-                                // Дополнительная проверка перед выполнением команды
-                                if (ed.isDestroyed || ! ed.view) {
-                                    console.warn('[richEditor] editor destroyed before running command', cmd.id);
-                                    return;
-                                }
-                                runFn(ed);
-                            }
-                            catch (err) {
-                                console.error('[richEditor] command failed', cmd.id, err);
-                            }
-                        });
+                        const cmdId = btn.dataset.command;
+                        if (! cmdId || ! COMMAND_RUN[cmdId]) return;
+                        this.runCommand(contentEl, cmdId);
                     });
+
                     toolbar.appendChild(btn);
                 });
-                this.refreshToolbar(toolbar);
+
+                const ed = getEditor(contentEl);
+
+                if (ed && ! ed.isDestroyed) {
+                    this.refreshToolbar(toolbar, ed);
+                }
             },
 
-            refreshToolbar(toolbar) {
-                const ed = this.editor;
-                if (! ed || ed.isDestroyed || ! toolbar) return;
+            refreshToolbar(toolbar, editor) {
+                if (! editor || editor.isDestroyed || ! toolbar) return;
+
                 toolbar.querySelectorAll('button[data-command]').forEach((btn) => {
                     const id = btn.dataset.command;
-                    const cmd = COMMANDS.find(c => c.id === id);
-                    if (! cmd?.isActive) return;
-                    try {
-                        btn.classList.toggle('is-active', !! cmd.isActive(ed));
-                    } catch (e) { /* ignore */ }
-                });
-            },
+                    const meta = TOOLBAR.find((t) => t.id === id);
+                    if (! meta || meta.divider) return;
 
-            applyLinkToggle() {
-                const ed = this.editor;
-                if (! ed || ed.isDestroyed) return;
-                try {
-                    if (ed.isActive('link')) {
-                        ed.commands.unsetLink();
-                        return;
-                    }
-                    const url = window.prompt('URL ссылки');
-                    if (! url) return;
-                    ed.commands.setLink({ href: url });
-                } catch (e) {
-                    console.error('[richEditor] link toggle failed', e);
-                }
+                    try {
+                        btn.classList.toggle('is-active', !! meta.active(editor));
+                        btn.disabled = ! meta.enabled(editor);
+                    } catch { /* ignore */ }
+                });
             },
         };
     };

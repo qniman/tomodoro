@@ -32,20 +32,49 @@ document.addEventListener('alpine:init', () => {
 
     let compactSidebar = false;
     try {
-        compactSidebar = localStorage.getItem('tomodoro:sidebarCompact') === '1';
+        const saved = localStorage.getItem('tomodoro:sidebarCompact') === '1';
+        const narrow = window.matchMedia('(max-width: 920px)').matches;
+        compactSidebar = saved && !narrow;
     } catch (e) { /* ignore */
     }
 
     window.Alpine.store('layout', {
         compactSidebar,
+        mobileSidebarOpen: false,
         toggleSidebarCompact() {
+            if (typeof window !== 'undefined' && window.matchMedia('(max-width: 920px)').matches) {
+                return;
+            }
             this.compactSidebar = !this.compactSidebar;
             try {
                 localStorage.setItem('tomodoro:sidebarCompact', this.compactSidebar ? '1' : '0');
             } catch (e) { /* ignore */
             }
         },
+        openMobileSidebar() {
+            this.mobileSidebarOpen = true;
+        },
+        closeMobileSidebar() {
+            this.mobileSidebarOpen = false;
+        },
+        toggleMobileSidebar() {
+            this.mobileSidebarOpen = !this.mobileSidebarOpen;
+        },
     });
+
+    const mqMobileLayout = window.matchMedia('(max-width: 920px)');
+    const clearCompactOnMobile = () => {
+        const layout = window.Alpine.store('layout');
+        if (mqMobileLayout.matches && layout.compactSidebar) {
+            layout.compactSidebar = false;
+            try {
+                localStorage.setItem('tomodoro:sidebarCompact', '0');
+            } catch (e) { /* ignore */
+            }
+        }
+    };
+    mqMobileLayout.addEventListener('change', clearCompactOnMobile);
+    queueMicrotask(clearCompactOnMobile);
 
     window.Alpine.store('theme', {
         current: localStorage.getItem('tomodoro:theme') || 'auto',
