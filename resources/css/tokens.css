@@ -183,6 +183,7 @@
     --z-toast: 70;
     --z-modal: 80;
     --z-tooltip: 90;
+    --z-portal: 200;
 
     /* Контентные ограничения */
     --content-max: 1280px;

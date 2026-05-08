@@ -9,8 +9,8 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -37,6 +37,7 @@ class TaskBoard extends Component
     public bool $showCompleted = false;
 
     public bool $quickAddOpen = false;
+
     public string $quickTitle = '';
 
     public function mount(string $scope = 'today'): void
@@ -52,8 +53,8 @@ class TaskBoard extends Component
     {
         return view('livewire.workspace.task-board', [
             'tasks' => $this->tasks(),
-            'projects' => Project::where('user_id', Auth::id())->where('is_archived', false)->orderBy('position')->get(),
-            'tags' => Tag::where('user_id', Auth::id())->orderBy('name')->get(),
+            'projects' => Project::query()->forUser(Auth::id())->active()->ordered()->get(),
+            'tags' => Tag::query()->forUser(Auth::id())->ordered()->get(),
             'selectedTask' => $this->selectedTask(),
             'scopeLabel' => $this->scopeLabel(),
             'scopeMeta' => $this->scopeMeta(),
@@ -70,10 +71,10 @@ class TaskBoard extends Component
         $this->applyScope($query);
 
         if ($this->search !== '') {
-            $like = '%' . $this->search . '%';
+            $like = '%'.$this->search.'%';
             $query->where(function (Builder $q) use ($like) {
                 $q->where('title', 'like', $like)
-                  ->orWhere('description_text', 'like', $like);
+                    ->orWhere('description_text', 'like', $like);
             });
         }
 
@@ -83,9 +84,9 @@ class TaskBoard extends Component
         }
 
         $query->orderByRaw('CASE WHEN completed_at IS NULL THEN 0 ELSE 1 END')
-              ->orderByRaw('CASE WHEN due_at IS NULL THEN 1 ELSE 0 END')
-              ->orderBy('due_at')
-              ->orderBy('position');
+            ->orderByRaw('CASE WHEN due_at IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('due_at')
+            ->orderBy('position');
 
         return $query->get();
     }
@@ -97,11 +98,11 @@ class TaskBoard extends Component
         match ($this->scope) {
             'today' => $query->where(function (Builder $q) use ($today) {
                 $q->whereDate('due_at', '<=', $today)
-                  ->orWhere('is_pinned', true);
+                    ->orWhere('is_pinned', true);
             }),
             'inbox' => $query->whereNull('project_id')->whereNull('due_at'),
             'upcoming' => $query->whereDate('due_at', '>', $today)
-                                ->whereDate('due_at', '<=', $today->copy()->addDays(14)),
+                ->whereDate('due_at', '<=', $today->copy()->addDays(14)),
             'project' => $query->where('project_id', $this->projectId),
             default => null,
         };
@@ -162,7 +163,7 @@ class TaskBoard extends Component
         );
     }
 
-    #[\Livewire\Attributes\On('open-quick-add')]
+    #[On('open-quick-add')]
     public function openQuickAdd(): void
     {
         $this->quickAddOpen = true;
@@ -180,10 +181,11 @@ class TaskBoard extends Component
         $title = trim($this->quickTitle);
         if ($title === '') {
             $this->closeQuickAdd();
+
             return;
         }
 
-        $task = new Task();
+        $task = new Task;
         $task->user_id = Auth::id();
         $task->title = $title;
 
@@ -227,7 +229,7 @@ class TaskBoard extends Component
         );
     }
 
-    #[\Livewire\Attributes\On('restore-task')]
+    #[On('restore-task')]
     public function restoreTask(int $taskId): void
     {
         $task = Task::withTrashed()
@@ -235,7 +237,9 @@ class TaskBoard extends Component
             ->where('id', $taskId)
             ->first();
 
-        if (! $task || ! $task->trashed()) return;
+        if (! $task || ! $task->trashed()) {
+            return;
+        }
 
         $task->restore();
 

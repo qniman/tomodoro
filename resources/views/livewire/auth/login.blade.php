@@ -16,7 +16,6 @@
             name="email"
             icon="mail"
             wire:model="email"
-            autocomplete="email"
             autofocus
             :error="$errors->first('email')"
         />
@@ -27,7 +26,6 @@
             name="password"
             icon="lock"
             wire:model="password"
-            autocomplete="current-password"
             :error="$errors->first('password')"
         />
 

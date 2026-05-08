@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Workspace;
 
+use App\Models\Project;
+use App\Models\Tag;
 use App\Models\Task;
 use App\Models\TaskAttachment;
 use App\Models\TaskChecklistItem;
@@ -19,14 +21,21 @@ class TaskDetail extends Component
     public ?int $taskId = null;
 
     public string $title = '';
+
     public ?string $descriptionHtml = '';
+
     public ?string $dueAt = null;
+
     public ?int $projectId = null;
+
     public string $priority = 'normal';
+
     public ?int $estimatedMinutes = null;
+
     public bool $isPinned = false;
 
     public string $newChecklistLabel = '';
+
     public $uploadedFiles = [];
 
     public function mount(?int $taskId = null): void
@@ -64,6 +73,7 @@ class TaskDetail extends Component
             $this->priority = 'normal';
             $this->estimatedMinutes = null;
             $this->isPinned = false;
+
             return;
         }
 
@@ -107,7 +117,7 @@ class TaskDetail extends Component
     {
         $task = $this->task();
         if ($task) {
-            $task->project_id = $value ?: null;
+            $task->project_id = $value !== null && $value !== '' ? (int) $value : null;
             $task->save();
         }
     }
@@ -133,10 +143,29 @@ class TaskDetail extends Component
         }
     }
 
+    public function toggleTag(int $tagId): void
+    {
+        $task = $this->task();
+        if (! $task) {
+            return;
+        }
+
+        if ($task->tags()->where('tags.id', $tagId)->exists()) {
+            $task->tags()->detach($tagId);
+        } else {
+            $task->tags()->attach($tagId);
+        }
+
+        $task->unsetRelation('tags');
+        $task->load('tags');
+    }
+
     public function togglePinned(): void
     {
         $task = $this->task();
-        if (! $task) return;
+        if (! $task) {
+            return;
+        }
         $task->is_pinned = ! $task->is_pinned;
         $task->save();
         $this->isPinned = $task->is_pinned;
@@ -145,7 +174,9 @@ class TaskDetail extends Component
     public function toggleCompleted(): void
     {
         $task = $this->task();
-        if (! $task) return;
+        if (! $task) {
+            return;
+        }
         $task->completed_at = $task->isCompleted() ? null : now();
         $task->save();
 
@@ -159,9 +190,13 @@ class TaskDetail extends Component
     public function addChecklistItem(): void
     {
         $task = $this->task();
-        if (! $task) return;
+        if (! $task) {
+            return;
+        }
         $label = trim($this->newChecklistLabel);
-        if ($label === '') return;
+        if ($label === '') {
+            return;
+        }
 
         $position = ((int) $task->checklist()->max('position')) + 10;
         TaskChecklistItem::create([
@@ -176,9 +211,13 @@ class TaskDetail extends Component
     public function toggleChecklistItem(int $itemId): void
     {
         $task = $this->task();
-        if (! $task) return;
+        if (! $task) {
+            return;
+        }
         $item = $task->checklist()->find($itemId);
-        if (! $item) return;
+        if (! $item) {
+            return;
+        }
         $item->is_done = ! $item->is_done;
         $item->save();
     }
@@ -186,17 +225,23 @@ class TaskDetail extends Component
     public function deleteChecklistItem(int $itemId): void
     {
         $task = $this->task();
-        if (! $task) return;
+        if (! $task) {
+            return;
+        }
         $task->checklist()->where('id', $itemId)->delete();
     }
 
     public function updatedUploadedFiles(): void
     {
         $task = $this->task();
-        if (! $task || ! is_array($this->uploadedFiles)) return;
+        if (! $task || ! is_array($this->uploadedFiles)) {
+            return;
+        }
 
         foreach ($this->uploadedFiles as $file) {
-            if (! $file) continue;
+            if (! $file) {
+                continue;
+            }
             $stored = $file->store('attachments/'.Auth::id(), 'public');
             TaskAttachment::create([
                 'task_id' => $task->id,
@@ -220,17 +265,26 @@ class TaskDetail extends Component
     public function deleteAttachment(int $attachmentId): void
     {
         $task = $this->task();
-        if (! $task) return;
+        if (! $task) {
+            return;
+        }
         $att = $task->attachments()->find($attachmentId);
-        if (! $att) return;
+        if (! $att) {
+            return;
+        }
 
-        try { Storage::disk($att->disk)->delete($att->path); } catch (\Throwable $e) { /* ignore */ }
+        try {
+            Storage::disk($att->disk)->delete($att->path);
+        } catch (\Throwable $e) { /* ignore */
+        }
         $att->delete();
     }
 
     public function startPomodoro(): void
     {
-        if (! $this->taskId) return;
+        if (! $this->taskId) {
+            return;
+        }
         $this->dispatch('pomodoro:start', taskId: $this->taskId);
         $this->dispatch('toast',
             type: 'success',
@@ -245,8 +299,37 @@ class TaskDetail extends Component
 
     public function render()
     {
+        $projects = Project::forUser(Auth::id())->active()->ordered()->get();
+        $projectMenuOptions = [['value' => null, 'label' => 'Без проекта']];
+        foreach ($projects as $p) {
+            $row = [
+                'value' => $p->id,
+                'label' => $p->name,
+                'dotColor' => $p->color,
+            ];
+            if ($p->icon) {
+                $row['icon'] = $p->displayIcon();
+                $row['iconColor'] = $p->color;
+            }
+            $projectMenuOptions[] = $row;
+        }
+
+        $priorityMenuOptions = collect(Task::PRIORITIES)->map(fn (string $p) => [
+            'value' => $p,
+            'label' => match ($p) {
+                'low' => 'Низкий',
+                'high' => 'Высокий',
+                'urgent' => 'Срочный',
+                default => 'Обычный',
+            },
+        ])->all();
+
         return view('livewire.workspace.task-detail', [
             'task' => $this->task(),
+            'projects' => $projects,
+            'projectMenuOptions' => $projectMenuOptions,
+            'priorityMenuOptions' => $priorityMenuOptions,
+            'allTags' => Tag::forUser(Auth::id())->ordered()->get(),
         ]);
     }
 }

@@ -60,7 +60,7 @@ class Settings extends Component
 
     public function setTab(string $tab): void
     {
-        $this->tab = in_array($tab, ['profile', 'security', 'appearance', 'pomodoro', 'shortcuts'], true) ? $tab : 'profile';
+        $this->tab = in_array($tab, ['profile', 'security', 'appearance', 'pomodoro', 'shortcuts', 'tags'], true) ? $tab : 'profile';
     }
 
     /* ============================================================ *

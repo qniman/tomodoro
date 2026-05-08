@@ -7,6 +7,19 @@
 
 @php
     $id = $attributes->get('id') ?? ($name ? 'sel-' . $name : 'sel-' . uniqid());
+    $autocomplete = $attributes->get('autocomplete');
+    if ($autocomplete === null) {
+        $autocomplete = 'off';
+    }
+
+    $selectAttrs = $attributes
+        ->except(['autocomplete'])
+        ->merge([
+            'id' => $id,
+            'name' => $name,
+            'autocomplete' => $autocomplete,
+        ])
+        ->class('select');
 @endphp
 
 <div class="field">
@@ -14,7 +27,7 @@
         <label for="{{ $id }}" class="field__label">{{ $label }}</label>
     @endif
 
-    <select id="{{ $id }}" name="{{ $name }}" {{ $attributes->merge(['class' => 'select']) }}>
+    <select {{ $selectAttrs }}>
         {{ $slot }}
     </select>
 

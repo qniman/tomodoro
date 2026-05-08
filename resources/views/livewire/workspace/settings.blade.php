@@ -2,7 +2,7 @@
     <div class="ws__header">
         <div class="ws__head-left">
             <h1 class="ws__title">Настройки</h1>
-            <span class="ws__subtitle">Профиль, безопасность, внешний вид и поведение помодоро</span>
+            <span class="ws__subtitle">Профиль, теги, безопасность, внешний вид и помодоро</span>
         </div>
     </div>
 
@@ -12,6 +12,7 @@
                 @php
                     $tabs = [
                         'profile'    => ['Профиль',     'user'],
+                        'tags'       => ['Теги',        'tag'],
                         'security'   => ['Безопасность', 'shield'],
                         'appearance' => ['Внешний вид', 'palette'],
                         'pomodoro'   => ['Помодоро',    'tomato'],
@@ -97,6 +98,21 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                @endif
+
+                {{-- ===== Теги ===== --}}
+                @if($tab === 'tags')
+                    <div class="settings-section">
+                        <div class="settings-section__head">
+                            <span style="color: var(--accent);"><x-ui.icon name="tag" :size="20" /></span>
+                            <div class="flex-1">
+                                <div class="settings-section__title">Справочник тегов</div>
+                                <div class="settings-section__hint">Метки для фильтров и задач: имя, цвет и значок. После сохранения обновится список в других местах приложения.</div>
+                            </div>
+                        </div>
+
+                        <livewire:workspace.manage-tags-modal :embedded="true" wire:key="settings-tags-crud" />
                     </div>
                 @endif
 

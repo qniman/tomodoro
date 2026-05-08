@@ -11,17 +11,21 @@
         ['key' => 'calendar', 'label' => 'Календарь',  'icon' => 'calendar', 'route' => 'app.calendar'],
     ];
 
-    $projects = $user?->projects()->where('is_archived', false)->orderBy('position')->get() ?? collect();
+    $tagsSettingsActive = $currentRoute === 'app.settings' && request()->query('tab') === 'tags';
 @endphp
 
 <x-layouts.base :title="$title">
-    <div class="app-shell">
+    <div
+        class="app-shell"
+        x-data
+        x-bind:class="{ 'app-shell--compact': $store.layout.compactSidebar }"
+    >
         <aside class="sidebar" aria-label="Основная навигация">
             <a href="{{ route('app') }}" wire:navigate.hover class="sidebar__brand">
                 <span class="sidebar__brand-mark">
                     <x-ui.icon name="tomato" :size="16" />
                 </span>
-                <span>Tomodoro</span>
+                <span class="sidebar__brand-title">Tomodoro</span>
             </a>
 
             <button
@@ -32,7 +36,7 @@
                 title="Открыть командную палитру (Ctrl+K)"
             >
                 <x-ui.icon name="search" :size="14" />
-                <span>Поиск и команды</span>
+                <span class="sidebar__search-label">Поиск и команды</span>
                 <span class="sidebar__search-keys">
                     <kbd class="kbd">Ctrl</kbd><kbd class="kbd">K</kbd>
                 </span>
@@ -50,30 +54,32 @@
                         class="sidebar__link {{ $isActive ? 'is-active' : '' }}"
                     >
                         <x-ui.icon :name="$item['icon']" :size="18" />
-                        <span>{{ $item['label'] }}</span>
+                        <span class="sidebar__nav-label">{{ $item['label'] }}</span>
                     </a>
                 @endforeach
 
-                @if($projects->count())
-                    <div class="sidebar__section">
-                        <div class="sidebar__section-title">
-                            <span>Проекты</span>
-                            <button class="btn btn--ghost btn--icon btn--sm" type="button" aria-label="Новый проект">
-                                <x-ui.icon name="plus" :size="14" />
-                            </button>
-                        </div>
-                        @foreach($projects as $project)
-                            <a
-                                href="#"
-                                wire:navigate
-                                class="sidebar__link"
-                            >
-                                <span class="sidebar__project-dot" style="background: {{ $project->color }}"></span>
-                                <span>{{ $project->name }}</span>
-                            </a>
-                        @endforeach
-                    </div>
-                @endif
+                <hr class="sidebar__divider" role="presentation" />
+
+                <a
+                    href="{{ route('app.settings', ['tab' => 'tags']) }}"
+                    wire:navigate
+                    class="sidebar__link {{ $tagsSettingsActive ? 'is-active' : '' }}"
+                >
+                    <x-ui.icon name="tag" :size="18" />
+                    <span class="sidebar__nav-label">Теги</span>
+                </a>
+
+                <livewire:workspace.sidebar-projects />
+
+                <button
+                    type="button"
+                    class="sidebar__narrow"
+                    @click.prevent="$store.layout.toggleSidebarCompact()"
+                    title="Компактная боковая панель"
+                >
+                    <x-ui.icon name="panel-left" :size="16" />
+                    <span class="sidebar__narrow-label">Компактная панель</span>
+                </button>
             </nav>
 
             <div class="sidebar__footer">
@@ -85,7 +91,7 @@
                                 <span class="sidebar__user-name">{{ $user?->name }}</span>
                                 <span class="sidebar__user-email">{{ $user?->email }}</span>
                             </span>
-                            <x-ui.icon name="chevron-up" :size="14" />
+                            <x-ui.icon class="sidebar__user-chevron" name="chevron-up" :size="14" />
                         </button>
                     </x-slot:trigger>
 
@@ -113,4 +119,7 @@
             {{ $slot }}
         </div>
     </div>
+
+    <livewire:workspace.manage-projects-modal />
+    <livewire:workspace.manage-tags-modal />
 </x-layouts.base>

@@ -8,6 +8,20 @@
 
 @php
     $id = $attributes->get('id') ?? ($name ? 'ta-' . $name : 'ta-' . uniqid());
+    $autocomplete = $attributes->get('autocomplete');
+    if ($autocomplete === null) {
+        $autocomplete = 'off';
+    }
+
+    $inputAttrs = $attributes
+        ->except(['autocomplete'])
+        ->merge([
+            'id' => $id,
+            'name' => $name,
+            'autocomplete' => $autocomplete,
+        ])
+        ->class('textarea');
+
 @endphp
 
 <div class="field">
@@ -15,7 +29,7 @@
         <label for="{{ $id }}" class="field__label">{{ $label }}</label>
     @endif
 
-    <textarea id="{{ $id }}" name="{{ $name }}" rows="{{ $rows }}" {{ $attributes->merge(['class' => 'textarea']) }}></textarea>
+    <textarea rows="{{ $rows }}" {{ $inputAttrs }}></textarea>
 
     @if($error)
         <p class="field__error">{{ $error }}</p>

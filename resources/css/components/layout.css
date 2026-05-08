@@ -65,6 +65,128 @@
     justify-content: space-between;
 }
 
+.sidebar__divider {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: var(--s-3) var(--s-1) var(--s-2);
+}
+
+.sidebar__narrow {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--s-2);
+    width: 100%;
+    margin-top: auto;
+    margin-bottom: var(--s-1);
+    padding: var(--s-2) var(--s-3);
+    border-radius: var(--r-1);
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-muted);
+    font-size: var(--fz-xs);
+    font-weight: var(--fw-medium);
+    cursor: pointer;
+    transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.sidebar__narrow:hover {
+    background: var(--surface-hover);
+    border-color: var(--border-strong);
+    color: var(--text);
+}
+
+.sidebar__narrow svg {
+    flex-shrink: 0;
+}
+
+.app-shell.app-shell--compact .sidebar__nav-label {
+    display: none;
+}
+
+.app-shell.app-shell--compact .sidebar__brand-title {
+    display: none;
+}
+
+.app-shell.app-shell--compact .sidebar__search-keys {
+    display: none;
+}
+
+.app-shell.app-shell--compact .sidebar__search-label {
+    display: none;
+}
+
+.app-shell.app-shell--compact .sidebar__search {
+    justify-content: center;
+    padding-inline: var(--s-2);
+}
+
+.app-shell.app-shell--compact .sidebar__section-head {
+    display: none;
+}
+
+.app-shell.app-shell--compact .sidebar__narrow-label {
+    display: none;
+}
+
+.app-shell.app-shell--compact .sidebar__narrow {
+    justify-content: center;
+    padding-inline: var(--s-2);
+}
+
+.app-shell.app-shell--compact .sidebar__link {
+    justify-content: center;
+}
+
+.app-shell.app-shell--compact .sidebar__project-row {
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+}
+
+.app-shell.app-shell--compact .sidebar__project-row .sidebar__project-link.sidebar__project-link {
+    justify-content: center;
+    padding-inline: var(--s-2);
+}
+
+.app-shell.app-shell--compact .sidebar__link-text {
+    display: none;
+}
+
+.app-shell.app-shell--compact .sidebar__project-menu {
+    display: none;
+}
+
+.app-shell.app-shell--compact .sidebar__user-info {
+    display: none;
+}
+
+.app-shell.app-shell--compact .sidebar__user {
+    justify-content: center;
+}
+
+.app-shell.app-shell--compact .sidebar__user-chevron {
+    display: none;
+}
+
+.app-shell.app-shell--compact .sidebar__section-title {
+    justify-content: center;
+}
+
+.workspace__main.workspace__main--task-board {
+    display: grid;
+    overflow: hidden;
+    align-items: stretch;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) var(--task-rail-width, 0px);
+    column-gap: var(--task-board-gap, 0px);
+    transition: grid-template-columns var(--dur-slow) var(--ease-out),
+        column-gap var(--dur-slow) var(--ease-out);
+}
+
+body.is-resizing-split .workspace__main.workspace__main--task-board {
+    transition: none;
+}
+
 .sidebar__nav {
     display: flex;
     flex-direction: column;
@@ -125,6 +247,11 @@
 }
 
 .sidebar__link.is-active svg { color: var(--accent); }
+
+/* Строка проекта: сохранить цвет маркера/иконки при активной навигации */
+.sidebar__project-link.is-active .sidebar__project-leading svg {
+    color: inherit;
+}
 
 .sidebar__link-count {
     margin-left: auto;
@@ -191,6 +318,55 @@
     border-radius: 50%;
     flex-shrink: 0;
     box-shadow: 0 0 0 1.5px var(--surface-2);
+}
+
+.sidebar__section-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.sidebar__project-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    border-radius: var(--r-1);
+}
+
+.sidebar__project-row:hover {
+    background: var(--surface-hover);
+}
+
+.sidebar__project-link {
+    min-width: 0;
+}
+
+.sidebar__project-link .sidebar__project-leading {
+    flex-shrink: 0;
+}
+
+.sidebar__project-link .sidebar__project-leading svg {
+    color: inherit;
+}
+
+.sidebar__project-menu {
+    margin-right: var(--s-1);
+}
+
+.sidebar__muted {
+    font-size: var(--fz-sm);
+    color: var(--text-subtle);
+    padding: var(--s-2) var(--s-4) var(--s-1);
+}
+
+.project-crud-row {
+    align-items: center;
+    padding: var(--s-2) var(--s-3);
+    border-radius: var(--r-1);
+}
+
+.project-crud-row:hover {
+    background: var(--surface-hover);
 }
 
 /* ----- Workspace ----- */

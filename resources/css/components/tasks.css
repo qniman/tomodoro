@@ -246,6 +246,17 @@
 }
 .meta-row svg { color: var(--text-subtle); }
 
+.meta-row .meta-menu-trigger {
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding-right: var(--s-7) !important;
+    min-height: 0 !important;
+    height: auto !important;
+}
+.meta-row .meta-menu-trigger:hover { border: 0 !important; box-shadow: none !important; }
+.meta-row .menu-select .menu-select__chev { opacity: 0.6; }
+
 /* ===== Checklist ===== */
 .checklist { display: flex; flex-direction: column; gap: var(--s-1); }
 
@@ -374,6 +385,17 @@
     background: var(--text-subtle);
 }
 
+button.tag-chip--btn {
+    font: inherit;
+    cursor: pointer;
+    appearance: none;
+}
+
+.tag-chip--btn.is-on {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+}
 /* ===== Tiptap editor ===== */
 .editor {
     border: 1px solid var(--border);
@@ -508,4 +530,118 @@
     background: var(--surface-2);
     padding: 1px 4px;
     border-radius: 4px;
+}
+
+/* ============================================================
+ * Лист задач (доска): прокрутка только списка, ресайз панели
+ * Ширина второй колонки и отступ: CSS-переменные из Alpine (taskBoardRailStyle).
+ * ============================================================ */
+.task-board__rail {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    align-self: stretch;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+.task-board__pane {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-4);
+}
+
+.task-board__list-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.task-board__splitter {
+    flex-shrink: 0;
+    width: 6px;
+    cursor: col-resize;
+    border-radius: var(--r-1);
+    background: transparent;
+    position: relative;
+    align-self: stretch;
+}
+
+.task-board__splitter:hover,
+body.is-resizing-split .task-board__splitter {
+    background: var(--accent-soft);
+}
+
+.task-board__splitter::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 12%;
+    bottom: 12%;
+    width: 3px;
+    transform: translateX(-50%);
+    border-radius: 3px;
+    background: color-mix(in oklab, var(--border-strong) 90%, transparent);
+}
+
+.task-board__detail {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+body.is-resizing-split {
+    cursor: col-resize !important;
+    user-select: none !important;
+}
+
+/* Выбор тегов в задаче */
+.task-tags-panel {
+    border: 1px solid var(--border);
+    border-radius: var(--r-2);
+    background: var(--surface);
+    overflow: hidden;
+}
+
+.task-tags-panel__search {
+    padding: var(--s-3);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+}
+
+.task-tags-panel__search .input-group {
+    width: 100%;
+}
+
+.task-tags-panel__hint {
+    font-size: var(--fz-xs);
+    color: var(--text-subtle);
+    margin-top: var(--s-1);
+}
+
+.task-tags-panel__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+    padding: var(--s-3);
+    max-height: 200px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    align-content: flex-start;
+}
+
+.task-tags-panel__empty {
+    font-size: var(--fz-sm);
+    color: var(--text-muted);
+    width: 100%;
+    padding: var(--s-4) var(--s-2);
 }

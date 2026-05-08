@@ -12,6 +12,7 @@
                 value="{{ $title }}"
                 maxlength="255"
                 placeholder="Название задачи"
+                autocomplete="off"
             />
 
             <div class="hstack gap-1">
@@ -45,17 +46,40 @@
                         class="input"
                         style="border: 0; padding: 0; background: transparent; box-shadow: none;"
                         wire:model.blur="dueAt"
+                        autocomplete="off"
                     />
                 </label>
 
-                <label class="meta-row" style="cursor: pointer;">
+                @isset($projectMenuOptions)
+                    <label class="meta-row" style="cursor: pointer; flex: 1; min-width: 0;">
+                        <x-ui.icon name="folder" :size="16" />
+                        <span style="flex: 1; min-width: 0;">
+                            <x-ui.menu-select
+                                property="projectId"
+                                :value="$projectId"
+                                :options="$projectMenuOptions"
+                                placeholder="Без проекта"
+                                align="left"
+                                minWidth="240"
+                                triggerClass="menu-select__trigger select meta-menu-trigger"
+                            />
+                        </span>
+                    </label>
+                @endisset
+
+                <label class="meta-row meta-row--menu" style="cursor: pointer; flex-wrap: nowrap;">
                     <x-ui.icon name="flag" :size="16" />
-                    <select wire:model.live="priority" class="select" style="border: 0; padding: 0 var(--s-7) 0 0; background-color: transparent; box-shadow: none;">
-                        <option value="low">Низкий</option>
-                        <option value="normal">Обычный</option>
-                        <option value="high">Высокий</option>
-                        <option value="urgent">Срочный</option>
-                    </select>
+                    <span style="flex: 1; min-width: 0;">
+                        <x-ui.menu-select
+                            property="priority"
+                            :value="$priority"
+                            :options="$priorityMenuOptions"
+                            placeholder="Приоритет"
+                            align="left"
+                            minWidth="200"
+                            triggerClass="menu-select__trigger select meta-menu-trigger"
+                        />
+                    </span>
                 </label>
 
                 <label class="meta-row" style="cursor: pointer;">
@@ -68,6 +92,7 @@
                         style="border: 0; padding: 0; background: transparent; box-shadow: none; max-width: 80px;"
                         placeholder="Оценка"
                         wire:model.blur="estimatedMinutes"
+                        autocomplete="off"
                     />
                     <span class="text-subtle">мин</span>
                 </label>
@@ -83,6 +108,56 @@
                 </button>
             </div>
 
+            @isset($allTags)
+                @php
+                    $tagsPicker = $allTags->map(fn (\App\Models\Tag $tag) => [
+                        'id' => $tag->id,
+                        'name' => $tag->name,
+                        'color' => $tag->color ?: '#94A3B8',
+                        'on' => $task->tags->contains('id', $tag->id),
+                    ])->values();
+                    $tagPanelKey = $task->tags->pluck('id')->sort()->values()->implode('-');
+                @endphp
+                <div class="task-tags-picker-wrap" style="margin-top: var(--s-4);" wire:key="tgpanel-{{ $task->id }}-{{ $tagPanelKey }}">
+                    <div class="task-detail__section-title">
+                        <x-ui.icon name="tag" :size="14" />
+                        <span>Теги</span>
+                    </div>
+                    <div class="task-tags-panel" x-data="taskTagPicker(@js($tagsPicker))" style="margin-top: var(--s-2);">
+                        <div class="task-tags-panel__search">
+                            <div class="input-group" style="height: 36px;">
+                                <span class="input-group__addon"><x-ui.icon name="search" :size="16" /></span>
+                                <input
+                                    type="search"
+                                    class="input"
+                                    x-model.debounce.150ms="q"
+                                    placeholder="Поиск тегов…"
+                                    autocomplete="off"
+                                    aria-label="Поиск тегов"
+                                />
+                            </div>
+                            <div class="task-tags-panel__hint">Название тега — до 20 символов.</div>
+                        </div>
+                        <div class="task-tags-panel__list">
+                            <template x-for="tag in filtered" :key="tag.id">
+                                <button
+                                    type="button"
+                                    class="tag-chip tag-chip--btn"
+                                    :class="{ 'is-on': tag.on }"
+                                    @click.prevent="$wire.toggleTag(tag.id)"
+                                >
+                                    <span class="tag-chip__dot" :style="{ backgroundColor: tag.color }"></span>
+                                    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 16ch;" x-text="tag.name"></span>
+                                </button>
+                            </template>
+                            <div class="task-tags-panel__empty" x-show="filtered.length === 0">
+                                Совпадений нет — попробуйте другую строку или создайте тег в настройках.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endisset
+
             {{-- Описание (rich) --}}
             <div>
                 <div class="task-detail__section-title">
@@ -91,15 +166,15 @@
                 </div>
 
                 {{--
-                    Обёртка с wire:key вне ignore: при смене задачи блок целиком пересоздаётся → новый Alpine/Tiptap.
-                    wire:ignore на самом .editor: при обновлениях того же задачи Livewire не трогает DOM ProseMirror.
+                    wire:ignore на оболочке: Livewire не трогает DOM редактора и Alpine инициализацию.
+                    wire:key внутри: при смене задачи блок целиком пересоздаётся → новый Alpine/Tiptap.
                 --}}
-                <div wire:key="editor-shell-{{ $task->id }}"
-                     class="editor-host"
+                <div class="editor-host"
                      x-data="richEditor($wire, 'descriptionHtml')"
                      x-init="init()"
+                     wire:ignore
                 >
-                    <div class="editor" wire:ignore>
+                    <div class="editor">
                         <div class="editor__toolbar" data-toolbar></div>
                         <div class="editor__content" data-content></div>
                     </div>

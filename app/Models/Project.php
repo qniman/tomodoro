@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Support\UiIconSet;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,6 +26,12 @@ class Project extends Model
         'is_archived' => 'boolean',
     ];
 
+    /** @return array<string, string> */
+    public static function iconChoices(): array
+    {
+        return UiIconSet::choices();
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -32,5 +40,33 @@ class Project extends Model
     public function tasks(): HasMany
     {
         return $this->hasMany(Task::class);
+    }
+
+    /** @param  Builder<Project>  $query */
+    public function scopeForUser(Builder $query, int $userId): Builder
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    /** @param  Builder<Project>  $query */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('is_archived', false);
+    }
+
+    /** @param  Builder<Project>  $query */
+    public function scopeOrdered(Builder $query): Builder
+    {
+        return $query->orderBy('position')->orderBy('name');
+    }
+
+    public function displayIcon(): string
+    {
+        $icon = $this->icon;
+        if ($icon && array_key_exists($icon, self::iconChoices())) {
+            return $icon;
+        }
+
+        return 'folder';
     }
 }

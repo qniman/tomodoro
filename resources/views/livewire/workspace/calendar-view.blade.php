@@ -44,8 +44,8 @@
     </div>
 
     <div class="ws__body">
-        <div class="cal {{ $dayItems ? '' : 'cal--solo' }}">
-            <div>
+        <div class="cal-layout {{ $dayItems ? 'cal-layout--aside' : '' }}">
+            <div class="cal-layout__main">
                 {{-- ===== Year view ===== --}}
                 @if($view === 'year' && $yearData)
                     <div class="cal-year">
@@ -157,74 +157,75 @@
                 @endif
             </div>
 
-            {{-- ===== Side panel: day drill-down ===== --}}
-            @if($dayItems)
-                <aside class="cal-side">
-                    <div class="hstack" style="justify-content: space-between; align-items: flex-start;">
-                        <div>
-                            <div class="cal-side__title">{{ $dayItems['day']->isoFormat('D MMMM') }}</div>
-                            <div class="cal-side__meta">{{ $dayItems['day']->isoFormat('dddd') }} · {{ $dayItems['tasks']->count() }} задач · {{ $dayItems['events']->count() }} событий</div>
+            <aside class="cal-layout__aside" aria-hidden="{{ $dayItems ? 'false' : 'true' }}">
+                @if($dayItems)
+                    <div class="cal-side" wire:key="cal-side-{{ $dayItems['day']->toDateString() }}">
+                        <div class="hstack" style="justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <div class="cal-side__title">{{ $dayItems['day']->isoFormat('D MMMM') }}</div>
+                                <div class="cal-side__meta">{{ $dayItems['day']->isoFormat('dddd') }} · {{ $dayItems['tasks']->count() }} задач · {{ $dayItems['events']->count() }} событий</div>
+                            </div>
+                            <button type="button" class="btn btn--ghost btn--icon btn--sm" wire:click="clearSelection" aria-label="Закрыть">
+                                <x-ui.icon name="x" :size="14" />
+                            </button>
                         </div>
-                        <button type="button" class="btn btn--ghost btn--icon btn--sm" wire:click="clearSelection" aria-label="Закрыть">
-                            <x-ui.icon name="x" :size="14" />
-                        </button>
-                    </div>
 
-                    <x-ui.button size="sm" variant="primary" icon="plus" wire:click="openCreateEvent('{{ $dayItems['day']->toDateString() }}')">
-                        Добавить событие
-                    </x-ui.button>
+                        <x-ui.button size="sm" variant="primary" icon="plus" wire:click="openCreateEvent('{{ $dayItems['day']->toDateString() }}')">
+                            Добавить событие
+                        </x-ui.button>
 
-                    <div>
-                        <div class="cal-side__group-title">События</div>
-                        @if($dayItems['events']->isEmpty())
-                            <div class="cal-side__empty">Никаких событий — день в твоём распоряжении.</div>
-                        @else
-                            <div class="cal-side__list">
-                                @foreach($dayItems['events'] as $event)
-                                    <div class="cal-event-row" wire:click="editEvent({{ $event->id }})">
-                                        <div class="cal-event-row__bar" style="background: {{ $event->color ?: 'var(--accent)' }};"></div>
-                                        <div class="cal-event-row__time">
-                                            @if($event->all_day)
-                                                Весь день
-                                            @else
-                                                {{ $event->starts_at->format('H:i') }}
-                                            @endif
+                        <div>
+                            <div class="cal-side__group-title">События</div>
+                            @if($dayItems['events']->isEmpty())
+                                <div class="cal-side__empty">Никаких событий — день в твоём распоряжении.</div>
+                            @else
+                                <div class="cal-side__list">
+                                    @foreach($dayItems['events'] as $event)
+                                        <div class="cal-event-row" wire:click="editEvent({{ $event->id }})">
+                                            <div class="cal-event-row__bar" style="background: {{ $event->color ?: 'var(--accent)' }};"></div>
+                                            <div class="cal-event-row__time">
+                                                @if($event->all_day)
+                                                    Весь день
+                                                @else
+                                                    {{ $event->starts_at->format('H:i') }}
+                                                @endif
+                                            </div>
+                                            <div class="cal-event-row__title">{{ $event->title }}</div>
+                                            <div class="cal-event-row__actions">
+                                                <button type="button"
+                                                        class="btn btn--ghost btn--icon btn--sm"
+                                                        wire:click.stop="deleteEvent({{ $event->id }})"
+                                                        wire:confirm="Удалить событие?">
+                                                    <x-ui.icon name="trash" :size="14" />
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div class="cal-event-row__title">{{ $event->title }}</div>
-                                        <div class="cal-event-row__actions">
-                                            <button type="button"
-                                                    class="btn btn--ghost btn--icon btn--sm"
-                                                    wire:click.stop="deleteEvent({{ $event->id }})"
-                                                    wire:confirm="Удалить событие?">
-                                                <x-ui.icon name="trash" :size="14" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @endif
-                    </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
 
-                    <div>
-                        <div class="cal-side__group-title">Задачи к этому дню</div>
-                        @if($dayItems['tasks']->isEmpty())
-                            <div class="cal-side__empty">Без дедлайна на этот день.</div>
-                        @else
-                            <div class="cal-side__list">
-                                @foreach($dayItems['tasks'] as $task)
-                                    <a href="{{ route('app.all', ['task' => $task->id]) }}" wire:navigate class="cal-event-row">
-                                        <div class="cal-event-row__bar" style="background: {{ $task->completed_at ? 'var(--success)' : ($task->priority === 'high' ? 'var(--accent)' : 'var(--info)') }};"></div>
-                                        <div class="cal-event-row__time">{{ $task->due_at->format('H:i') }}</div>
-                                        <div class="cal-event-row__title">
-                                            @if($task->completed_at)<s>{{ $task->title }}</s>@else{{ $task->title }}@endif
-                                        </div>
-                                    </a>
-                                @endforeach
-                            </div>
-                        @endif
+                        <div>
+                            <div class="cal-side__group-title">Задачи к этому дню</div>
+                            @if($dayItems['tasks']->isEmpty())
+                                <div class="cal-side__empty">Без дедлайна на этот день.</div>
+                            @else
+                                <div class="cal-side__list">
+                                    @foreach($dayItems['tasks'] as $task)
+                                        <a href="{{ route('app.all', ['task' => $task->id]) }}" wire:navigate class="cal-event-row">
+                                            <div class="cal-event-row__bar" style="background: {{ $task->completed_at ? 'var(--success)' : ($task->priority === 'high' ? 'var(--accent)' : 'var(--info)') }};"></div>
+                                            <div class="cal-event-row__time">{{ $task->due_at->format('H:i') }}</div>
+                                            <div class="cal-event-row__title">
+                                                @if($task->completed_at)<s>{{ $task->title }}</s>@else{{ $task->title }}@endif
+                                            </div>
+                                        </a>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
                     </div>
-                </aside>
-            @endif
+                @endif
+            </aside>
         </div>
     </div>
 

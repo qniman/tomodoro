@@ -27,14 +27,19 @@
 @else
     <div
         wire:key="pomo-{{ $session?->id ?? 'idle' }}-{{ $showLauncher ? 'l' : ($expanded ? 'e' : 'b') }}"
-        class="pomo"
+        class="pomo pomo-mount"
         data-phase="{{ $phase }}"
-        x-data="pomoWidget(@js($initial))"
-        x-init="init()"
+        data-pomo-phase="{{ $initial['phase'] }}"
+        data-pomo-duration="{{ $initial['phase_duration'] }}"
+        data-pomo-phase-started-ms="{{ $initial['phase_started_at_ms'] ?? '' }}"
+        data-pomo-paused-ms="{{ $initial['paused_at_ms'] ?? '' }}"
+        data-pomo-completed="{{ $initial['completed'] }}"
+        data-pomo-total="{{ $initial['total'] }}"
     >
+        <div class="pomo-shell">
         @if($showLauncher)
             {{-- ==== Launcher ==== --}}
-            <div class="pomo-launcher" @pointerdown.stop>
+            <div class="pomo-launcher">
                 <div class="pomo-launcher__header">
                     <span class="hstack gap-2" style="color: var(--accent);">
                         <x-ui.icon name="timer" :size="18" />
@@ -48,12 +53,14 @@
                 <div class="pomo-launcher__body">
                     <div class="field">
                         <label class="field__label">Задача</label>
-                        <select class="select" wire:model.live="launcherTaskId">
-                            <option value="">Свободный фокус</option>
-                            @foreach($tasks as $t)
-                                <option value="{{ $t->id }}">{{ $t->title }}</option>
-                            @endforeach
-                        </select>
+                        <x-ui.menu-select
+                            property="launcherTaskId"
+                            :value="$launcherTaskId"
+                            :options="$launcherTaskOptions"
+                            placeholder="Свободный фокус"
+                            minWidth="320"
+                            align="left"
+                        />
                     </div>
 
                     <div class="pomo-launcher__plan">
@@ -111,11 +118,17 @@
 
         @elseif($hasSession && $expanded)
             {{-- ==== Развернутая карточка ==== --}}
-            <div class="pomo-card" data-phase="{{ $phase }}" @pointerdown.stop>
-                <div class="pomo-card__handle" @pointerdown="startDrag">
+            <div class="pomo-card" data-phase="{{ $phase }}">
+                <div class="pomo-card__handle">
                     <span class="pomo-card__phase">
                         <x-ui.icon name="{{ $session->isWorking() ? 'tomato' : 'sun-medium' }}" :size="14" />
-                        <span x-text="phaseLabel">Фокус</span>
+                        <span>
+                            {{ match ($session->phase ?? 'work') {
+                                'short_break' => 'Короткий перерыв',
+                                'long_break' => 'Длинный перерыв',
+                                default => 'Фокус',
+                            } }}
+                        </span>
                     </span>
                     <div class="pomo-card__actions">
                         <button type="button" class="btn btn--ghost btn--icon btn--sm" wire:click="toggleExpand" aria-label="Свернуть">
@@ -136,6 +149,12 @@
                         @endif
                     </div>
 
+                    <div
+                        class="pomo-live"
+                        wire:ignore
+                        x-data="pomoWidget(@js($initial))"
+                        x-init="init()"
+                    >
                     <div class="pomo-clock">
                         <svg viewBox="0 0 {{ 2 * $bigCx }} {{ 2 * $bigCx }}">
                             <circle class="pomo-clock__track" cx="{{ $bigCx }}" cy="{{ $bigCx }}" r="{{ $bigR }}" />
@@ -155,6 +174,7 @@
                             </div>
                         </div>
                     </div>
+                    </div>
 
                     <div class="pomo-card__counter">
                         @for($i = 0; $i < min($session->total_pomodoros, 12); $i++)
@@ -168,18 +188,17 @@
                         <x-ui.icon name="stop" :size="14" />
                     </button>
 
-                    <template x-if="isPaused">
-                        <button class="pomo-card__big" type="button" wire:click="resume" aria-label="Продолжить">
+                    @if($session->paused_at)
+                        <button class="pomo-card__big" type="button" aria-label="Продолжить" wire:click="resume">
                             <x-ui.icon name="play" :size="22" />
                         </button>
-                    </template>
-                    <template x-if="! isPaused">
-                        <button class="pomo-card__big" type="button" wire:click="pause" aria-label="Пауза">
+                    @else
+                        <button class="pomo-card__big" type="button" aria-label="Пауза" wire:click="pause">
                             <x-ui.icon name="pause" :size="22" />
                         </button>
-                    </template>
+                    @endif
 
-                    <button class="pomo-card__small" type="button" wire:click="skip" aria-label="Пропустить фазу">
+                    <button class="pomo-card__small" type="button" aria-label="Пропустить фазу" wire:click="skip">
                         <x-ui.icon name="fast-fwd" :size="14" />
                     </button>
                 </div>
@@ -190,9 +209,14 @@
             <button type="button"
                     class="pomo-bubble"
                     data-phase="{{ $phase }}"
-                    @pointerdown="startDrag"
-                    @click.stop="$wire.toggleExpand()"
+                    wire:click="toggleExpand"
                     aria-label="Открыть таймер">
+                <span
+                    class="pomo-live pomo-live--bubble"
+                    wire:ignore
+                    x-data="pomoWidget(@js($initial))"
+                    x-init="init()"
+                >
                 <svg class="pomo-bubble__ring" viewBox="0 0 {{ 2 * $smallCx }} {{ 2 * $smallCx }}">
                     <circle class="pomo-bubble__ring-track" cx="{{ $smallCx }}" cy="{{ $smallCx }}" r="{{ $smallR }}" />
                     <circle class="pomo-bubble__ring-progress"
@@ -202,8 +226,9 @@
                 </svg>
                 <span class="pomo-bubble__time" x-text="formattedTime">{{ gmdate('i:s', $session->phaseDuration()) }}</span>
                 <span class="pomo-bubble__phase-icon">
-                    <template x-if="isWorking"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5c4 0 7 3 7 7s-3 7-7 7-7-3-7-7 3-7 7-7z"/></svg></template>
-                    <template x-if="! isWorking"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></template>
+                    <svg x-show="isWorking" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5c4 0 7 3 7 7s-3 7-7 7-7-3-7-7 3-7 7-7z"/></svg>
+                    <svg x-show="! isWorking" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+                </span>
                 </span>
             </button>
 
@@ -212,13 +237,13 @@
             <button type="button"
                     class="pomo-bubble"
                     data-phase="work"
-                    @pointerdown="startDrag"
-                    @click.stop="$wire.openLauncher()"
+                    wire:click="openLauncher"
                     aria-label="Запустить помодоро">
                 <span style="color: var(--accent);">
                     <x-ui.icon name="tomato" :size="22" />
                 </span>
             </button>
         @endif
+    </div>
     </div>
 @endif

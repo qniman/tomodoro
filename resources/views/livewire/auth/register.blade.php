@@ -16,7 +16,6 @@
             name="name"
             icon="user"
             wire:model="name"
-            autocomplete="name"
             autofocus
             :error="$errors->first('name')"
         />
@@ -27,7 +26,6 @@
             name="email"
             icon="mail"
             wire:model.blur="email"
-            autocomplete="email"
             :error="$errors->first('email')"
         />
 
@@ -37,7 +35,6 @@
             name="password"
             icon="lock"
             wire:model="password"
-            autocomplete="new-password"
             :error="$errors->first('password')"
             hint="Минимум 8 символов"
         />
@@ -48,7 +45,6 @@
             name="password_confirmation"
             icon="key"
             wire:model="password_confirmation"
-            autocomplete="new-password"
             :error="$errors->first('password_confirmation')"
         />
 

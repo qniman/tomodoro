@@ -65,6 +65,7 @@ export function registerRichEditor() {
             editor: null,
             saveTimer: null,
             _toolbarRefreshRaf: null,
+            _lastWireId: null,
 
             init() {
                 const shell = this.$el;
@@ -74,6 +75,14 @@ export function registerRichEditor() {
                     console.warn('[richEditor] missing data-content / data-toolbar', shell);
                     return;
                 }
+
+                // Проверяем, изменился ли компонент Livewire (смена задачи)
+                const currentWireId = this.wire?.__object?.id || this.wire?.id || null;
+                if (this._lastWireId !== null && this._lastWireId !== currentWireId) {
+                    // Компонент изменился, перезагружаем редактор
+                    this.destroy();
+                }
+                this._lastWireId = currentWireId;
 
                 destroyOrphan(content, this.editor);
                 if (this.editor) {
@@ -124,6 +133,24 @@ export function registerRichEditor() {
 
                 this.buildToolbar(toolbar);
 
+                // Слушаем обновления Livewire - если содержимое изменилось извне, перезагружаем
+                const handleLivewireUpdate = () => {
+                    if (! this.editor || this.editor.isDestroyed) return;
+                    const newContent = this.readWire() || '';
+                    const currentContent = this.editor.getHTML();
+                    
+                    // Если содержимое отличается от того, что в редакторе, обновляем его
+                    if (newContent !== currentContent) {
+                        console.log('[richEditor] content changed externally, reloading editor');
+                        this.editor.commands.setContent(newContent);
+                    }
+                };
+
+                // Слушаем события Livewire
+                if (window.addEventListener && this.wire) {
+                    window.addEventListener('livewire:updated', handleLivewireUpdate);
+                }
+
                 const cleanup = () => this.destroy();
                 window.addEventListener('livewire:navigating', cleanup, { once: true });
                 shell.addEventListener('alpine:destroyed', cleanup, { once: true });
@@ -140,18 +167,34 @@ export function registerRichEditor() {
             readWire() {
                 try {
                     const w = this.wire;
-                    if (! w) return '';
-                    if (typeof w.get === 'function') return w.get(this.prop) ?? '';
-                    return w[this.prop] ?? '';
+                    if (! w) {
+                        console.warn('[richEditor] wire not available');
+                        return '';
+                    }
+                    // Livewire 3: используем getter методы если доступны
+                    if (typeof w.get === 'function') {
+                        const val = w.get(this.prop);
+                        return val ?? '';
+                    }
+                    // Fallback: прямой доступ к свойству
+                    if (this.prop in w) {
+                        return w[this.prop] ?? '';
+                    }
+                    return '';
                 } catch (e) {
+                    console.warn('[richEditor] readWire error', e);
                     return '';
                 }
             },
 
             pushWire(html) {
                 const w = this.wire;
-                if (! w) return;
+                if (! w) {
+                    console.warn('[richEditor] wire not available for push');
+                    return;
+                }
                 try {
+                    // Livewire 3: используем setter методы если доступны
                     if (typeof w.set === 'function') {
                         w.set(this.prop, html);
                         return;
@@ -160,6 +203,7 @@ export function registerRichEditor() {
                         w.$set(this.prop, html);
                         return;
                     }
+                    // Fallback: прямое присваивание
                     w[this.prop] = html;
                 } catch (e) {
                     console.error('[richEditor] pushWire failed', e);
@@ -167,22 +211,32 @@ export function registerRichEditor() {
             },
 
             deferEditorCommand(fn) {
-                queueMicrotask(() => {
-                    requestAnimationFrame(() => {
-                        const inst = this.editor;
-                        if (! inst || inst.isDestroyed || ! inst.view) return;
+                const inst = this.editor;
+                if (! inst || inst.isDestroyed || ! inst.view) {
+                    console.warn('[richEditor] editor not ready for command');
+                    return;
+                }
+                try {
+                    // Применяем команду синхронно, но только если view готов
+                    if (typeof inst.view.focus === 'function') {
+                        inst.view.focus();
+                    }
+                    // Выполняем команду на следующем микротаске, чтобы дать focus время примениться
+                    queueMicrotask(() => {
+                        const ed = this.editor;
+                        if (! ed || ed.isDestroyed || ! ed.view) {
+                            console.warn('[richEditor] editor destroyed before command execution');
+                            return;
+                        }
                         try {
-                            inst.view.focus();
-                            requestAnimationFrame(() => {
-                                const ed = this.editor;
-                                if (! ed || ed.isDestroyed) return;
-                                fn(ed);
-                            });
+                            fn(ed);
                         } catch (e) {
-                            console.error('[richEditor] deferEditorCommand failed', e);
+                            console.error('[richEditor] command execution failed', e);
                         }
                     });
-                });
+                } catch (e) {
+                    console.error('[richEditor] deferEditorCommand setup failed', e);
+                }
             },
 
             buildToolbar(toolbar) {
@@ -211,8 +265,17 @@ export function registerRichEditor() {
                         const runFn = cmd.run;
                         if (! runFn) return;
                         this.deferEditorCommand((ed) => {
-                            try { runFn(ed); }
-                            catch (err) { console.error('[richEditor] command failed', cmd.id, err); }
+                            try {
+                                // Дополнительная проверка перед выполнением команды
+                                if (ed.isDestroyed || ! ed.view) {
+                                    console.warn('[richEditor] editor destroyed before running command', cmd.id);
+                                    return;
+                                }
+                                runFn(ed);
+                            }
+                            catch (err) {
+                                console.error('[richEditor] command failed', cmd.id, err);
+                            }
                         });
                     });
                     toolbar.appendChild(btn);

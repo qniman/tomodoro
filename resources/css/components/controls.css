@@ -492,9 +492,59 @@ a:focus-visible {
 }
 
 .dropdown__item:hover { background: var(--surface-hover); }
-.dropdown__item:focus-visible { background: var(--surface-hover); }
+.dropdown__menu--portal {
+    /* Teleport to body: never inherit absolute + top:calc(100%+6px) from .dropdown__menu —
+       that pushes the panel below the viewport until JS runs and briefly grows scrollable
+       overflow (whole UI "jumps" when scrollbar appears). Fixed + provisional top/left;
+       Alpine :style from place() overrides top/left. */
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    margin: 0;
+    animation: none;
+    right: auto !important;
+    bottom: auto;
+    width: max-content;
+    max-width: calc(100vw - 16px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-2);
+    box-shadow: var(--shadow-3);
+    padding: var(--s-1);
+}
 
-.dropdown__item svg { color: var(--text-subtle); flex-shrink: 0; }
+.menu-select {
+    display: block;
+    width: 100%;
+}
+
+.menu-select__trigger.menu-select__trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-2);
+    text-align: left;
+    cursor: pointer;
+}
+
+.menu-select__value {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.menu-select__chev {
+    flex-shrink: 0;
+    opacity: 0.75;
+}
+
+.dropdown__item.is-selected {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
 .dropdown__item:hover svg { color: var(--text); }
 
 .dropdown__item--danger { color: var(--danger); }

@@ -62,7 +62,8 @@ class PomodoroService
         }
 
         $now = Carbon::now();
-        $pausedFor = max(0, (int) $now->diffInSeconds($session->paused_at, false));
+        // Длительность паузы: от moment paused_at до сейчас (устойчивее, чем diffInSeconds($now, …)).
+        $pausedFor = max(0, (int) $session->paused_at->diffInSeconds($now));
 
         // Сдвигаем начало фазы вперёд на длительность паузы.
         if ($session->phase_started_at) {

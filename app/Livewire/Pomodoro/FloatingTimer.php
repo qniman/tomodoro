@@ -4,10 +4,11 @@ namespace App\Livewire\Pomodoro;
 
 use App\Models\PomodoroSession;
 use App\Models\Task;
+use App\Services\Pomodoro\PomodoroPlan;
 use App\Services\Pomodoro\PomodoroPlanner;
 use App\Services\Pomodoro\PomodoroService;
 use Illuminate\Support\Facades\Auth;
-use Livewire\Attributes\Computed;
+use Illuminate\Support\Str;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -15,28 +16,47 @@ class FloatingTimer extends Component
 {
     /** Видимость виджета (после явного «закрыть»). */
     public bool $visible = true;
+
     public bool $expanded = false;
 
     /** Состояние диалога «выбор задачи». */
     public bool $showLauncher = false;
+
     public ?int $launcherTaskId = null;
+
     public int $launcherPomodoros = 4;
+
     public int $launcherWorkMinutes = 25;
+
     public int $launcherShortBreak = 5;
+
     public int $launcherLongBreak = 15;
+
     public string $launcherPlanSource = 'default';
 
     public function render()
     {
+        $launcherTaskOptions = [['value' => null, 'label' => 'Свободный фокус']];
+        foreach ($this->tasks() as $task) {
+            $launcherTaskOptions[] = [
+                'value' => $task->id,
+                'label' => Str::limit($task->title, 96),
+            ];
+        }
+
         return view('livewire.pomodoro.floating-timer', [
             'session' => $this->activeSession(),
             'tasks' => $this->tasks(),
+            'launcherTaskOptions' => $launcherTaskOptions,
         ]);
     }
 
     protected function activeSession(): ?PomodoroSession
     {
-        if (! Auth::check()) return null;
+        if (! Auth::check()) {
+            return null;
+        }
+
         return $this->service()->activeSession(Auth::user());
     }
 
@@ -73,7 +93,6 @@ class FloatingTimer extends Component
         $this->recalcLauncher();
         $this->showLauncher = true;
         $this->visible = true;
-        $this->expanded = true;
     }
 
     public function closeLauncher(): void
@@ -106,7 +125,7 @@ class FloatingTimer extends Component
             ? Task::forUser(Auth::id())->find($this->launcherTaskId)
             : null;
 
-        $plan = new \App\Services\Pomodoro\PomodoroPlan(
+        $plan = new PomodoroPlan(
             workMinutes: max(5, (int) $this->launcherWorkMinutes),
             shortBreakMinutes: max(1, (int) $this->launcherShortBreak),
             longBreakMinutes: max(1, (int) $this->launcherLongBreak),
@@ -131,12 +150,16 @@ class FloatingTimer extends Component
 
     public function pause(): void
     {
-        if ($s = $this->activeSession()) $this->service()->pause($s);
+        if ($s = $this->activeSession()) {
+            $this->service()->pause($s);
+        }
     }
 
     public function resume(): void
     {
-        if ($s = $this->activeSession()) $this->service()->resume($s);
+        if ($s = $this->activeSession()) {
+            $this->service()->resume($s);
+        }
     }
 
     public function skip(): void

@@ -6,12 +6,12 @@
     position: fixed;
     right: 24px;
     bottom: 24px;
-    z-index: 70;
+    /* Выше нижней зоны тостов (они на том же tier), чтобы клики не перехватывались */
+    z-index: calc(var(--z-toast, 70) + 1);
     user-select: none;
-    touch-action: none;
 }
 
-.pomo--dragging { cursor: grabbing !important; transition: none !important; }
+
 
 /* ===== Свёрнутая «капля»: круглая кнопка с радиальным прогрессом ===== */
 .pomo-bubble {
@@ -23,13 +23,19 @@
     box-shadow: var(--shadow-3);
     display: grid;
     place-items: center;
-    cursor: grab;
+    cursor: pointer;
     position: relative;
     transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease);
     animation: pop-in var(--dur-slow) var(--ease-out) both;
 }
 
 .pomo-bubble:hover { transform: translateY(-1px); box-shadow: var(--shadow-pop); }
+
+/* Alpine + wire:ignore внутри кнопки: не перехватывать клик, сохранить сетку как без обёртки */
+.pomo-bubble > .pomo-live--bubble {
+    display: contents;
+    pointer-events: none;
+}
 
 .pomo-bubble[data-phase='work']        { --pomo-color: var(--accent); }
 .pomo-bubble[data-phase='short_break'] { --pomo-color: var(--success); }
@@ -96,7 +102,7 @@
     display: flex;
     align-items: center;
     gap: var(--s-2);
-    cursor: grab;
+    cursor: default;
     border-bottom: 1px solid var(--border);
 }
 

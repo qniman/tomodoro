@@ -1,7 +1,12 @@
 import './bootstrap';
+import './taskUi';
+import { registerPortalMenus } from './portalMenus';
 import { registerRichEditor } from './editor';
 import { registerPomodoroWidget } from './pomodoro';
 import { registerCommandPalette } from './command-palette';
+
+// Телепорт выпадающих меню до прикрепления к body
+registerPortalMenus();
 
 // Tiptap-обёртка для редактора задач
 registerRichEditor();
@@ -24,6 +29,23 @@ function applyTheme(theme) {
 
 document.addEventListener('alpine:init', () => {
     if (! window.Alpine) return;
+
+    let compactSidebar = false;
+    try {
+        compactSidebar = localStorage.getItem('tomodoro:sidebarCompact') === '1';
+    } catch (e) { /* ignore */
+    }
+
+    window.Alpine.store('layout', {
+        compactSidebar,
+        toggleSidebarCompact() {
+            this.compactSidebar = !this.compactSidebar;
+            try {
+                localStorage.setItem('tomodoro:sidebarCompact', this.compactSidebar ? '1' : '0');
+            } catch (e) { /* ignore */
+            }
+        },
+    });
 
     window.Alpine.store('theme', {
         current: localStorage.getItem('tomodoro:theme') || 'auto',

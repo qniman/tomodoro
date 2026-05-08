@@ -4,17 +4,27 @@
     'hint' => null,
     'error' => null,
     'name' => null,
-    'icon' => null,         // подкладывает иконку в input-group слева
+    'icon' => null,
     'size' => 'md',
 ])
 
 @php
     $id = $attributes->get('id') ?? ($name ? 'input-' . $name : 'input-' . uniqid());
-    $inputAttrs = $attributes->merge([
-        'class' => 'input' . ($size === 'lg' ? ' input--lg' : ''),
-        'id' => $id,
-        'name' => $name,
-    ])->except(['class']);
+    $autocomplete = $attributes->get('autocomplete');
+    if ($autocomplete === null) {
+        $autocomplete = 'off';
+    }
+
+    $baseClass = 'input' . ($size === 'lg' ? ' input--lg' : '');
+    $inputAttrs = $attributes
+        ->except(['autocomplete'])
+        ->merge([
+            'id' => $id,
+            'name' => $name,
+            'autocomplete' => $autocomplete,
+        ])
+        ->class($baseClass);
+
 @endphp
 
 <div class="field">

@@ -1,47 +1,96 @@
 /**
- * Floating pomodoro timer client controller.
+ * Плавающий помодоро: локальный тикающий интерфейс + редкие sync с Livewire.
  *
- * - Хранит позицию виджета в localStorage (между перезагрузками).
- * - Drag через pointer-события (с учётом краёв окна).
- * - Локальный тикающий таймер на requestAnimationFrame, чтобы интерфейс
- *   не дёргал сервер каждую секунду.
- * - Heartbeat (sync) каждые 20 с — точечно синхронизирует spent_seconds задачи.
- * - При естественном окончании фазы зовёт серверный action phaseFinished.
+ * После morph Livewire значения в x-data="pomoWidget(@js(...))" не переинициализируются,
+ * поэтому на корне .pomo выставлены data-pomo-* — их перечитываем из Alpine и по хукам morph.
  */
 
-const STORE_KEY = 'tomodoro:pomo-position';
-
-function pad(n) { return String(n).padStart(2, '0'); }
-function fmt(seconds) {
+const pad = (n) => String(n).padStart(2, '0');
+const fmt = (seconds) => {
     const s = Math.max(0, Math.floor(seconds));
     return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`;
+};
+
+/** Корень data — .pomo-mount; локальный Alpine-компонент — .pomo-live (может быть несколько после morph). */
+/** @param {Element | ParentNode | null | undefined} root */
+function syncPomoPanelsFromDom(root) {
+    const Alpine = typeof window !== 'undefined' ? window.Alpine : undefined;
+    if (!root || !(root instanceof Element) || typeof Alpine === 'undefined' || typeof Alpine.$data !== 'function') {
+        return;
+    }
+
+    const mounts = [];
+
+    if (root.classList?.contains?.('pomo-mount')) {
+        mounts.push(root);
+    }
+
+    root.querySelectorAll?.('.pomo-mount')?.forEach((el) => mounts.push(el));
+
+    const seen = new Set();
+
+    for (const mount of mounts) {
+        if (!(mount instanceof Element) || seen.has(mount)) {
+            continue;
+        }
+
+        seen.add(mount);
+
+        const lives = mount.querySelectorAll(':scope .pomo-live');
+
+        lives.forEach((live) => {
+            try {
+                const cmp = Alpine.$data(live);
+
+                if (cmp && typeof cmp.syncFromDataset === 'function') {
+                    cmp.syncFromDataset();
+                }
+            } catch (_) {
+                /* нет Alpine */
+            }
+        });
+    }
 }
 
-function loadPosition() {
-    try {
-        const raw = localStorage.getItem(STORE_KEY);
-        if (! raw) return null;
-        const parsed = JSON.parse(raw);
-        if (typeof parsed?.x === 'number' && typeof parsed?.y === 'number') return parsed;
-    } catch (e) { /* ignore */ }
-    return null;
-}
-function savePosition(pos) {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(pos)); }
-    catch (e) { /* ignore */ }
+let pomodoroMorphHooksRegistered = false;
+let pomodoroLivewireListenAttached = false;
+
+function registerPomodoroMorphSync() {
+    if (typeof document === 'undefined') {
+        return;
+    }
+
+    const attach = () => {
+        const Livewire = window.Livewire;
+        if (typeof Livewire === 'undefined' || typeof Livewire.hook !== 'function') {
+            return;
+        }
+
+        if (!pomodoroMorphHooksRegistered) {
+            pomodoroMorphHooksRegistered = true;
+            // Хук может передать узел ниже корня LW — читаем data-pomo-* со всего body.
+            Livewire.hook('morph.updated', () => queueMicrotask(() => syncPomoPanelsFromDom(document.body)));
+            Livewire.hook('morph.added', () => queueMicrotask(() => syncPomoPanelsFromDom(document.body)));
+        }
+    };
+
+    if (! pomodoroLivewireListenAttached) {
+        pomodoroLivewireListenAttached = true;
+        document.addEventListener('livewire:init', attach);
+    }
+
+    attach(); /* Livewire уже в window до init — успеем навесить хуки без ожидания */
 }
 
 export function registerPomodoroWidget() {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    registerPomodoroMorphSync();
 
     window.pomoWidget = function pomoWidget(initial) {
         return {
-            // позиция (px, относительно правого нижнего угла)
-            pos: loadPosition() || { x: 24, y: 24 },
-            dragging: false,
-            dragOffset: null,
-
-            // данные сессии (поддержка обоих стилей ключей из @js)
             phase: initial?.phase ?? 'work',
             phaseDuration: initial?.phase_duration ?? initial?.phaseDuration ?? 1500,
             phaseStartedAtMs: initial?.phase_started_at_ms ?? initial?.phaseStartedAtMs ?? null,
@@ -49,24 +98,55 @@ export function registerPomodoroWidget() {
             completed: initial?.completed ?? 0,
             total: initial?.total ?? 0,
 
-            // тикалка
             now: Date.now(),
             tickHandle: null,
             heartbeatHandle: null,
             lastHeartbeatRemaining: null,
 
+            syncFromDataset() {
+                const mount = typeof this.$el?.closest === 'function'
+                    ? this.$el.closest('.pomo-mount')
+                    : null;
+                const d = (mount instanceof Element ? mount.dataset : null) ?? (this.$el?.dataset ?? {});
+                const p = d.pomoPhase;
+                if (p !== undefined && p !== null && String(p).length > 0) {
+                    this.phase = String(p);
+                }
+
+                const dur = Number.parseInt(d.pomoDuration ?? '', 10);
+                if (!Number.isNaN(dur) && dur > 0) {
+                    this.phaseDuration = dur;
+                }
+
+                const started = Number.parseInt(d.pomoPhaseStartedMs ?? '', 10);
+                this.phaseStartedAtMs = Number.isNaN(started) || started <= 0 ? null : started;
+
+                const pausedStr = String(d.pomoPausedMs ?? '');
+                if (pausedStr === '') {
+                    this.pausedAtMs = null;
+                } else {
+                    const paused = Number.parseInt(pausedStr, 10);
+                    this.pausedAtMs = Number.isNaN(paused) || paused <= 0 ? null : paused;
+                }
+
+                const c = Number.parseInt(d.pomoCompleted ?? '', 10);
+                if (!Number.isNaN(c) && c >= 0) {
+                    this.completed = c;
+                }
+
+                const t = Number.parseInt(d.pomoTotal ?? '', 10);
+                if (!Number.isNaN(t) && t >= 0) {
+                    this.total = t;
+                }
+
+                this.lastHeartbeatRemaining = null;
+                this.now = Date.now();
+            },
+
             init() {
-                this.applyPosition();
+                this.syncFromDataset();
                 this.startTicking();
                 this.scheduleHeartbeat();
-
-                // Слушатели на window — в шаблоне @pointermove.window ломаются в связке Livewire+Alpine
-                // (методы не находятся в области выражения).
-                this._winMove = (e) => this.moveDrag(e);
-                this._winUp = (e) => this.endDrag(e);
-                window.addEventListener('pointermove', this._winMove, { passive: true });
-                window.addEventListener('pointerup', this._winUp);
-                window.addEventListener('pointercancel', this._winUp);
 
                 this.$el.addEventListener('alpine:destroyed', () => this.destroy(), { once: true });
             },
@@ -80,67 +160,8 @@ export function registerPomodoroWidget() {
                 if (this.heartbeatHandle) clearInterval(this.heartbeatHandle);
                 this.tickHandle = null;
                 this.heartbeatHandle = null;
-
-                if (this._winMove) {
-                    window.removeEventListener('pointermove', this._winMove);
-                    window.removeEventListener('pointerup', this._winUp);
-                    window.removeEventListener('pointercancel', this._winUp);
-                    this._winMove = null;
-                    this._winUp = null;
-                }
             },
 
-            // -------- Position / drag --------
-            applyPosition() {
-                const el = this.$el;
-                if (! el) return;
-                el.style.right = this.pos.x + 'px';
-                el.style.bottom = this.pos.y + 'px';
-                el.style.left = 'auto';
-                el.style.top = 'auto';
-            },
-
-            startDrag(event) {
-                if (event.button !== undefined && event.button !== 0) return;
-                this.dragging = true;
-                const el = this.$el;
-                const rect = el.getBoundingClientRect();
-                this.dragOffset = {
-                    dx: event.clientX - rect.right,
-                    dy: event.clientY - rect.bottom,
-                };
-                el.classList.add('pomo--dragging');
-                el.setPointerCapture?.(event.pointerId);
-            },
-            moveDrag(event) {
-                if (! this.dragging || ! this.dragOffset) return;
-                const winW = window.innerWidth;
-                const winH = window.innerHeight;
-                const newRight = winW - event.clientX + this.dragOffset.dx;
-                const newBottom = winH - event.clientY + this.dragOffset.dy;
-                const el = this.$el;
-                const w = el.offsetWidth;
-                const h = el.offsetHeight;
-                this.pos = {
-                    x: Math.max(8, Math.min(newRight, winW - w - 8)),
-                    y: Math.max(8, Math.min(newBottom, winH - h - 8)),
-                };
-                this.applyPosition();
-            },
-            endDrag(event) {
-                if (! this.dragging) return;
-                this.dragging = false;
-                this.dragOffset = null;
-                this.$el.classList.remove('pomo--dragging');
-                try {
-                    if (event?.pointerId != null && this.$el?.hasPointerCapture?.(event.pointerId)) {
-                        this.$el.releasePointerCapture(event.pointerId);
-                    }
-                } catch (e) { /* ignore */ }
-                savePosition(this.pos);
-            },
-
-            // -------- Tick --------
             startTicking() {
                 const loop = () => {
                     this.now = Date.now();
@@ -151,24 +172,30 @@ export function registerPomodoroWidget() {
 
             scheduleHeartbeat() {
                 this.heartbeatHandle = setInterval(() => {
-                    if (! this.phaseStartedAtMs || this.pausedAtMs) return;
+                    if (!this.phaseStartedAtMs || this.pausedAtMs) return;
                     if (this.phase !== 'work') return;
-                    // вызываем сервер раз в 20 секунд
-                    this.$wire.tick();
+                    if (this.$wire && typeof this.$wire.tick === 'function') {
+                        this.$wire.tick();
+                    }
                 }, 20000);
             },
 
-            // -------- Computed --------
             get remainingSeconds() {
-                if (! this.phaseStartedAtMs) return this.phaseDuration;
+                if (!this.phaseStartedAtMs) return this.phaseDuration;
                 const referenceMs = this.pausedAtMs || this.now;
                 const elapsed = Math.max(0, Math.floor((referenceMs - this.phaseStartedAtMs) / 1000));
                 const remaining = Math.max(0, this.phaseDuration - elapsed);
 
-                // Если время вышло — единожды дёргаем сервер.
-                if (remaining === 0 && this.phaseStartedAtMs && ! this.pausedAtMs && this.lastHeartbeatRemaining !== 0) {
+                if (
+                    remaining === 0
+                    && this.phaseStartedAtMs
+                    && !this.pausedAtMs
+                    && this.lastHeartbeatRemaining !== 0
+                ) {
                     this.lastHeartbeatRemaining = 0;
-                    queueMicrotask(() => this.$wire.phaseFinished());
+                    if (this.$wire && typeof this.$wire.phaseFinished === 'function') {
+                        queueMicrotask(() => this.$wire.phaseFinished());
+                    }
                 }
 
                 return remaining;
@@ -184,11 +211,7 @@ export function registerPomodoroWidget() {
             },
 
             get isPaused() {
-                return !! this.pausedAtMs;
-            },
-
-            get isRunning() {
-                return !! this.phaseStartedAtMs && ! this.pausedAtMs;
+                return !!this.pausedAtMs;
             },
 
             get isWorking() {
