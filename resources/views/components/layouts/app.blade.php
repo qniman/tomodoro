@@ -11,6 +11,8 @@
         ['key' => 'calendar', 'label' => 'Календарь',  'icon' => 'calendar', 'route' => 'app.calendar'],
     ];
 
+    $roomsActive = str_starts_with($currentRoute ?? '', 'workspace.');
+
     $tagsSettingsActive = $currentRoute === 'app.settings' && request()->query('tab') === 'tags';
 @endphp
 
@@ -93,6 +95,15 @@
 
                 <hr class="sidebar__divider" role="presentation" />
             </div>
+                <a
+                    href="{{ route('workspace.index') }}"
+                    wire:navigate
+                    class="sidebar__link {{ $roomsActive ? 'is-active' : '' }}"
+                >
+                    <x-ui.icon name="users" :size="18" />
+                    <span class="sidebar__nav-label">Комнаты</span>
+                </a>
+
                 <a
                     href="{{ route('app.settings', ['tab' => 'tags']) }}"
                     wire:navigate

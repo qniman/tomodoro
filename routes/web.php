@@ -5,6 +5,8 @@ use App\Http\Controllers\Auth\VkOAuthController;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
 use App\Livewire\Workspace\CalendarView;
+use App\Livewire\Workspace\Room;
+use App\Livewire\Workspace\RoomIndex;
 use App\Livewire\Workspace\Settings;
 use App\Livewire\Workspace\TaskBoard;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +34,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/app/calendar', CalendarView::class)->name('app.calendar');
     Route::get('/app/settings', Settings::class)->name('app.settings');
+
+    Route::get('/workspace', RoomIndex::class)->name('workspace.index');
+    Route::get('/workspace/{workspace}', Room::class)->name('workspace.room');
 
     Route::post('/logout', LogoutController::class)->name('logout');
 });

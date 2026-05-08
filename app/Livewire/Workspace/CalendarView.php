@@ -291,6 +291,12 @@ class CalendarView extends Component
 
     /* ===== CRUD событий ===== */
 
+    #[On('calendar:open-create-event')]
+    public function openCreateEventFromPalette(): void
+    {
+        $this->openCreateEvent();
+    }
+
     public function openCreateEvent(?string $date = null): void
     {
         $this->editingEventId = null;
