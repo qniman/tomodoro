@@ -23,6 +23,8 @@
         myUserId: {{ auth()->id() }},
         session: @js($sessionData),
         isOwner: {{ $isOwner ? 'true' : 'false' }},
+        initialStatuses:   @js($members->pluck('status', 'user_id')),
+        initialPomodoros:  @js($members->pluck('pomodoros_today', 'user_id')),
     })"
     x-init="init()"
     @room-timer-updated.window="onTimerUpdated($event.detail)"
@@ -299,7 +301,7 @@
 
 @push('scripts')
 <script>
-window.roomPage = function({ workspaceId, myUserId, session, isOwner }) {
+window.roomPage = function({ workspaceId, myUserId, session, isOwner, initialStatuses = {}, initialPomodoros = {} }) {
     return {
         workspaceId,
         myUserId,
@@ -310,9 +312,9 @@ window.roomPage = function({ workspaceId, myUserId, session, isOwner }) {
         timerNow: Date.now(),
         timerHandle: null,
 
-        // Реактивное состояние участников
-        memberStatuses: {},
-        memberPomodoros: {},
+        // Реактивное состояние участников (инициализируем серверными данными)
+        memberStatuses: Object.assign({}, initialStatuses),
+        memberPomodoros: Object.assign({}, initialPomodoros),
 
         // Чат (новые, пришедшие через Echo)
         chatMessages: [],
