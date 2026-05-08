@@ -10,7 +10,6 @@ use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
-use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -25,13 +24,18 @@ class Settings extends Component
 
     /* ===== Профиль ===== */
     public string $name = '';
+
     public string $email = '';
+
     public ?string $avatarPath = null;
+
     public $newAvatar = null;
 
     /* ===== Безопасность ===== */
     public string $currentPassword = '';
+
     public string $newPassword = '';
+
     public string $newPasswordConfirmation = '';
 
     /* ===== Внешний вид ===== */
@@ -39,8 +43,11 @@ class Settings extends Component
 
     /* ===== Помодоро ===== */
     public int $workMinutes = 25;
+
     public int $shortBreakMinutes = 5;
+
     public int $longBreakMinutes = 15;
+
     public int $longBreakEvery = 4;
 
     public function mount(): void
@@ -125,6 +132,14 @@ class Settings extends Component
 
     public function changePassword(): void
     {
+        $user = Auth::user();
+
+        if ($user->password_is_placeholder) {
+            $this->addError('currentPassword', 'Сначала задайте пароль в блоке «Вход по почте» выше.');
+
+            return;
+        }
+
         $this->validate([
             'currentPassword' => ['required', 'current_password'],
             'newPassword' => ['required', 'string', 'min:8', 'confirmed:newPasswordConfirmation'],
@@ -133,10 +148,41 @@ class Settings extends Component
             'newPassword' => 'новый пароль',
         ]);
 
-        Auth::user()->update(['password' => Hash::make($this->newPassword)]);
+        $user->update(['password' => Hash::make($this->newPassword)]);
 
         $this->reset(['currentPassword', 'newPassword', 'newPasswordConfirmation']);
         $this->dispatch('toast', type: 'success', title: 'Пароль обновлён');
+    }
+
+    /** Пароль для входа по email после входа только через OAuth (VK и т.д.). */
+    public function setExternalLoginPassword(): void
+    {
+        $user = Auth::user();
+
+        if (! $user->password_is_placeholder) {
+            $this->addError('newPassword', 'Пароль уже задан — используйте смену пароля ниже.');
+
+            return;
+        }
+
+        $this->validate([
+            'newPassword' => ['required', 'string', 'min:8', 'confirmed:newPasswordConfirmation'],
+        ], attributes: [
+            'newPassword' => 'новый пароль',
+        ]);
+
+        $user->update([
+            'password' => Hash::make($this->newPassword),
+            'password_is_placeholder' => false,
+        ]);
+
+        $this->reset(['currentPassword', 'newPassword', 'newPasswordConfirmation']);
+        $this->dispatch(
+            'toast',
+            type: 'success',
+            title: 'Пароль сохранён',
+            message: 'Теперь можно входить по email и паролю на странице входа.',
+        );
     }
 
     /* ============================================================ *

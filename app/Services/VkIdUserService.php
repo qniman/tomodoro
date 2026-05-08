@@ -113,6 +113,7 @@ class VkIdUserService
                 'name' => $name,
                 'email' => $chosenEmail,
                 'password' => Hash::make(Str::random(48)),
+                'password_is_placeholder' => true,
                 'vk_id' => $vkId,
                 'email_verified_at' => now(),
             ]);

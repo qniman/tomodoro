@@ -20,6 +20,7 @@ class User extends Authenticatable
         'avatar_path',
         'theme',
         'pomodoro_settings',
+        'password_is_placeholder',
     ];
 
     protected $hidden = [
@@ -30,6 +31,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'password_is_placeholder' => 'boolean',
         'pomodoro_settings' => 'array',
     ];
 

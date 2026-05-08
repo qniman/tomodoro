@@ -6,6 +6,7 @@ use App\Models\PomodoroSession;
 use App\Models\Task;
 use App\Support\UiIconSet;
 use Carbon\Carbon;
+use Faker\Generator;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -83,7 +84,7 @@ final class MassSeeder extends Seeder
     }
 
     /**
-     * @param  \Faker\Generator  $faker
+     * @param  Generator  $faker
      */
     private function seedUser(object $faker, int $slot): void
     {
@@ -94,6 +95,7 @@ final class MassSeeder extends Seeder
             'email' => sprintf('stress+%05d@tomodoro.local', $slot),
             'email_verified_at' => $nowTs,
             'password' => Hash::make(sprintf('stress-%05d', $slot)),
+            'password_is_placeholder' => false,
             'avatar_path' => null,
             'theme' => $faker->randomElement(['auto', 'light', 'dark']),
             'pomodoro_settings' => json_encode([
@@ -117,7 +119,7 @@ final class MassSeeder extends Seeder
     }
 
     /**
-     * @param  \Faker\Generator  $faker
+     * @param  Generator  $faker
      * @return list<int>
      */
     private function insertProjects(object $faker, int $userId): array
@@ -143,7 +145,7 @@ final class MassSeeder extends Seeder
     }
 
     /**
-     * @param  \Faker\Generator  $faker
+     * @param  Generator  $faker
      * @return list<int>
      */
     private function insertTags(object $faker, int $userId): array
@@ -170,7 +172,7 @@ final class MassSeeder extends Seeder
     }
 
     /**
-     * @param  \Faker\Generator  $faker
+     * @param  Generator  $faker
      * @param  list<int>  $projectIds
      * @param  list<int>  $tagIds
      */
@@ -249,7 +251,7 @@ final class MassSeeder extends Seeder
     }
 
     /**
-     * @param  \Faker\Generator  $faker
+     * @param  Generator  $faker
      * @param  array<int,array<string,mixed>>  $taskBatch
      * @param  list<int>  $tagIds
      */
@@ -348,7 +350,7 @@ final class MassSeeder extends Seeder
     }
 
     /**
-     * @param  \Faker\Generator  $faker
+     * @param  Generator  $faker
      */
     private function insertCalendarEvents(object $faker, int $userId): void
     {
@@ -399,7 +401,7 @@ final class MassSeeder extends Seeder
     /**
      * Только финальные статусы, без running/paused — чтобы у пользователя после сидирования не оставалось «активной» pomodoro-сессии.
      *
-     * @param  \Faker\Generator  $faker
+     * @param  Generator  $faker
      */
     private function insertPomodoroSessions(object $faker, int $userId): void
     {
@@ -455,7 +457,7 @@ final class MassSeeder extends Seeder
     /**
      * Связывает подмножество открытых задач случайными родительскими id того же пользователя.
      *
-     * @param  \Faker\Generator  $faker
+     * @param  Generator  $faker
      */
     private function assignRandomParents(object $faker, int $userId): void
     {

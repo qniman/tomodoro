@@ -2,12 +2,13 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
+ * @extends Factory<User>
  */
 class UserFactory extends Factory
 {
@@ -39,6 +40,18 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * Аккаунт как после OAuth: случайный пароль, нужно вызвать «задать пароль» в настройках.
+     */
+    public function oauthRandomPassword(): static
+    {
+        return $this->state(fn () => [
+            'vk_id' => (string) fake()->unique()->numerify('##########'),
+            'password' => Hash::make(Str::random(48)),
+            'password_is_placeholder' => true,
         ]);
     }
 }

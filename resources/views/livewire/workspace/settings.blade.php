@@ -118,22 +118,60 @@
 
                 {{-- ===== Безопасность ===== --}}
                 @if($tab === 'security')
+                    @if($user->password_is_placeholder)
+                        <div class="settings-section">
+                            <div class="settings-section__head">
+                                <span style="color: var(--accent);"><x-ui.icon name="key" :size="20" /></span>
+                                <div class="flex-1">
+                                    <div class="settings-section__title">Пароль для входа по почте</div>
+                                    <div class="settings-section__hint">
+                                        Вы вошли через соцсеть или внешний сервис. Задайте свой пароль — тогда на странице входа можно авторизоваться по email и паролю, не только через VK.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <form wire:submit.prevent="setExternalLoginPassword" class="vstack gap-4" style="max-width: 420px;">
+                                <x-ui.input type="password" label="Новый пароль" wire:model="newPassword" :error="$errors->first('newPassword')" autocomplete="new-password" />
+                                <x-ui.input type="password" label="Повторите пароль" wire:model="newPasswordConfirmation" autocomplete="new-password" />
+
+                                <div class="hstack gap-2" style="justify-content: flex-end;">
+                                    <x-ui.button type="submit" variant="primary" icon="check" wireTarget="setExternalLoginPassword">
+                                        Сохранить пароль
+                                    </x-ui.button>
+                                </div>
+                            </form>
+                        </div>
+                    @endif
+
                     <div class="settings-section">
                         <div class="settings-section__head">
                             <span style="color: var(--accent);"><x-ui.icon name="shield" :size="20" /></span>
                             <div class="flex-1">
                                 <div class="settings-section__title">Сменить пароль</div>
-                                <div class="settings-section__hint">Не короче 8 символов. После смены продолжишь работать без выхода.</div>
+                                <div class="settings-section__hint">
+                                    @if($user->password_is_placeholder)
+                                        После того как зададите пароль в блоке выше, здесь можно будет менять пароль, указав текущий.
+                                    @else
+                                        Не короче 8 символов. После смены продолжишь работать без выхода.
+                                    @endif
+                                </div>
                             </div>
                         </div>
 
                         <form wire:submit.prevent="changePassword" class="vstack gap-4" style="max-width: 420px;">
-                            <x-ui.input type="password" label="Текущий пароль" wire:model="currentPassword" :error="$errors->first('currentPassword')" />
-                            <x-ui.input type="password" label="Новый пароль" wire:model="newPassword" :error="$errors->first('newPassword')" />
-                            <x-ui.input type="password" label="Повторите новый пароль" wire:model="newPasswordConfirmation" />
+                            <x-ui.input
+                                type="password"
+                                label="Текущий пароль"
+                                wire:model="currentPassword"
+                                :error="$errors->first('currentPassword')"
+                                autocomplete="current-password"
+                                :disabled="$user->password_is_placeholder"
+                            />
+                            <x-ui.input type="password" label="Новый пароль" wire:model="newPassword" :error="$errors->first('newPassword')" autocomplete="new-password" :disabled="$user->password_is_placeholder" />
+                            <x-ui.input type="password" label="Повторите новый пароль" wire:model="newPasswordConfirmation" autocomplete="new-password" :disabled="$user->password_is_placeholder" />
 
                             <div class="hstack gap-2" style="justify-content: flex-end;">
-                                <x-ui.button type="submit" variant="primary" icon="check" wireTarget="changePassword">
+                                <x-ui.button type="submit" variant="primary" icon="check" wireTarget="changePassword" :disabled="$user->password_is_placeholder">
                                     Сменить пароль
                                 </x-ui.button>
                             </div>
