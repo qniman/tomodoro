@@ -12,6 +12,16 @@
         'xl' => 'modal--xl',
         default => '',
     };
+
+    // Конвертируем Livewire wire-действие в Alpine $wire выражение:
+    // '$set('prop', val)' → '$wire.set('prop', val)'
+    // 'closeModal'        → '$wire.closeModal()'
+    $alpineClose = null;
+    if ($closeAction) {
+        $alpineClose = str_starts_with($closeAction, '$set(')
+            ? '$wire.set(' . substr($closeAction, 5)   // убираем '$set('
+            : '$wire.' . $closeAction . '()';
+    }
 @endphp
 
 @if($show)
@@ -19,7 +29,7 @@
         class="modal-backdrop"
         x-data
         wire:click.self="{{ $closeAction }}"
-        @keydown.escape.window="$wire.call('{{ $closeAction }}')"
+        @keydown.escape.window="{{ $alpineClose }}"
     >
         <div class="modal {{ $sizeClass }}" role="dialog" aria-modal="true" {{ $attributes }}>
             @if($title || $subtitle)
