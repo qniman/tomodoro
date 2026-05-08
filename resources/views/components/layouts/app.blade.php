@@ -187,4 +187,5 @@
 
     <livewire:workspace.manage-projects-modal />
     <livewire:workspace.manage-tags-modal />
+    <livewire:release-notes-modal />
 </x-layouts.base>

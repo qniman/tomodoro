@@ -207,6 +207,22 @@
                             @endforeach
                         </div>
                     </div>
+
+                    <div class="settings-section">
+                        <div class="settings-section__head">
+                            <span style="color: var(--accent);"><x-ui.icon name="sparkles" :size="20" /></span>
+                            <div class="flex-1">
+                                <div class="settings-section__title">Нововведения</div>
+                                <div class="settings-section__hint">После обновлений приложение может показывать краткое описание изменений. Отключите, если не хотите видеть это окно.</div>
+                            </div>
+                        </div>
+
+                        <div class="settings-row" style="align-items: center;">
+                            <x-ui.switch wire:model.live="hideChangelogModal" class="flex-shrink-0">
+                                Не показывать окно «Что нового»
+                            </x-ui.switch>
+                        </div>
+                    </div>
                 @endif
 
                 {{-- ===== Хоткеи ===== --}}

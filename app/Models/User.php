@@ -21,6 +21,8 @@ class User extends Authenticatable
         'theme',
         'pomodoro_settings',
         'password_is_placeholder',
+        'last_seen_changelog_version',
+        'hide_changelog_modal',
     ];
 
     protected $hidden = [
@@ -33,6 +35,7 @@ class User extends Authenticatable
         'password' => 'hashed',
         'password_is_placeholder' => 'boolean',
         'pomodoro_settings' => 'array',
+        'hide_changelog_modal' => 'boolean',
     ];
 
     public const DEFAULT_POMODORO_SETTINGS = [

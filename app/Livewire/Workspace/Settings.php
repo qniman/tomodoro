@@ -41,6 +41,8 @@ class Settings extends Component
     /* ===== Внешний вид ===== */
     public string $theme = 'auto';
 
+    public bool $hideChangelogModal = false;
+
     /* ===== Помодоро ===== */
     public int $workMinutes = 25;
 
@@ -57,6 +59,7 @@ class Settings extends Component
         $this->email = $user->email ?? '';
         $this->avatarPath = $user->avatar_path;
         $this->theme = $user->theme ?? 'auto';
+        $this->hideChangelogModal = (bool) ($user->hide_changelog_modal ?? false);
 
         $prefs = $user->pomodoro_preferences;
         $this->workMinutes = (int) ($prefs['work_minutes'] ?? 25);
@@ -198,6 +201,17 @@ class Settings extends Component
         // Браузерное событие — JS-слушатель применит тему мгновенно.
         $this->dispatch('apply-theme', theme: $theme);
         $this->dispatch('toast', type: 'success', title: 'Тема изменена');
+    }
+
+    public function updatedHideChangelogModal(): void
+    {
+        Auth::user()->update(['hide_changelog_modal' => $this->hideChangelogModal]);
+
+        $msg = $this->hideChangelogModal
+            ? 'Окно нововведений отключено'
+            : 'Окно нововведений снова включено';
+
+        $this->dispatch('toast', type: 'success', title: $msg);
     }
 
     /* ============================================================ *
