@@ -20,13 +20,26 @@
     $smallC = 2 * pi() * $smallR;
 
     $phase = $session?->phase ?? 'work';
+
+    /* Livewire + Alpine: при паузе/resume morph иначе сохраняет старый x-data; новый ключ = новый компонент с @js($initial). */
+    $pomoLiveWireKey = 'none';
+    if ($hasSession && $session) {
+        $pomoLiveWireKey = implode('-', [
+            (string) $session->getKey(),
+            (string) (optional($session->paused_at)->getTimestamp() ?? '0'),
+            (string) (optional($session->phase_started_at)->getTimestamp() ?? '0'),
+            (string) $session->phase,
+            (string) ($session->completed_pomodoros ?? 0),
+        ]);
+    }
 @endphp
 
+{{-- Один стабильный корень для Livewire: иначе при @if меняется корневой узел view → morph теряет snapshot / closestComponent. --}}
+<div class="pomo-livewire-root">
 @if(! $visible)
-    <div></div>
+    <div class="pomo-hidden-placeholder" aria-hidden="true"></div>
 @else
     <div
-        wire:key="pomo-{{ $session?->id ?? 'idle' }}-{{ $showLauncher ? 'l' : ($expanded ? 'e' : 'b') }}"
         class="pomo pomo-mount"
         data-phase="{{ $phase }}"
         data-pomo-phase="{{ $initial['phase'] }}"
@@ -150,9 +163,15 @@
                     </div>
 
                     <div
+                        wire:key="pomo-live-{{ $pomoLiveWireKey }}"
                         class="pomo-live"
-                        wire:ignore
-                        x-data="pomoWidget(@js($initial))"
+                        data-pomo-phase="{{ $initial['phase'] }}"
+                        data-pomo-duration="{{ $initial['phase_duration'] }}"
+                        data-pomo-phase-started-ms="{{ $initial['phase_started_at_ms'] ?? '' }}"
+                        data-pomo-paused-ms="{{ $initial['paused_at_ms'] ?? '' }}"
+                        data-pomo-completed="{{ $initial['completed'] }}"
+                        data-pomo-total="{{ $initial['total'] }}"
+                        x-data="window.pomoWidget(@js($initial))"
                         x-init="init()"
                     >
                     <div class="pomo-clock">
@@ -212,9 +231,15 @@
                     wire:click="toggleExpand"
                     aria-label="Открыть таймер">
                 <span
+                    wire:key="pomo-live-{{ $pomoLiveWireKey }}"
                     class="pomo-live pomo-live--bubble"
-                    wire:ignore
-                    x-data="pomoWidget(@js($initial))"
+                    data-pomo-phase="{{ $initial['phase'] }}"
+                    data-pomo-duration="{{ $initial['phase_duration'] }}"
+                    data-pomo-phase-started-ms="{{ $initial['phase_started_at_ms'] ?? '' }}"
+                    data-pomo-paused-ms="{{ $initial['paused_at_ms'] ?? '' }}"
+                    data-pomo-completed="{{ $initial['completed'] }}"
+                    data-pomo-total="{{ $initial['total'] }}"
+                    x-data="window.pomoWidget(@js($initial))"
                     x-init="init()"
                 >
                 <svg class="pomo-bubble__ring" viewBox="0 0 {{ 2 * $smallCx }} {{ 2 * $smallCx }}">
@@ -247,3 +272,4 @@
     </div>
     </div>
 @endif
+</div>

@@ -153,6 +153,7 @@
     position: absolute; inset: 0;
     transform: rotate(-90deg);
     width: 100%; height: 100%;
+    pointer-events: none;
 }
 
 .pomo-clock__track { fill: none; stroke: var(--surface-3); stroke-width: 6; }
@@ -201,6 +202,9 @@
     padding: var(--s-3) var(--s-4) var(--s-4);
     border-top: 1px solid var(--border);
     background: var(--surface-2);
+    /* Поверх часов (SVG) в теле карточки — чтобы wire:click по кнопкам не терялся */
+    position: relative;
+    z-index: 2;
 }
 
 .pomo-card__big {

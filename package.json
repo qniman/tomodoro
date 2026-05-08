@@ -6,9 +6,9 @@
         "node": ">=20.19.0"
     },
     "scripts": {
-        "build": "vite build",
-        "dev": "vite",
-        "dev:host": "vite --host --strictPort"
+        "build": "vite build && vite build --config vite.pomodoro.config.js",
+        "dev": "concurrently -k \"vite\" \"vite build --config vite.pomodoro.config.js --watch\"",
+        "dev:host": "concurrently -k \"vite --host --strictPort\" \"vite build --config vite.pomodoro.config.js --watch\""
     },
     "devDependencies": {
         "concurrently": "^9.0.1",

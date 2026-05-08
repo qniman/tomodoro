@@ -40,11 +40,6 @@
         @empty
             <div class="text-muted text-center" style="padding-block: var(--s-8);">
                 <p>Тегов пока нет.</p>
-                <p class="mt-2">
-                    <x-ui.button variant="primary" icon="plus" wire:click="startCreate">
-                        Создать первый
-                    </x-ui.button>
-                </p>
             </div>
         @endforelse
     </div>
@@ -67,8 +62,8 @@
             <div class="vstack gap-2">
                 <label class="text-sm text-subtle">Цвет</label>
                 <div class="hstack gap-2" style="align-items: center;">
-                    <input type="color" wire:model="color" style="width: 44px; height: 36px; padding: 2px; border-radius: var(--r-2); border: 1px solid var(--border); cursor: pointer;" />
-                    <input type="text" class="input mono" wire:model.blur="color" style="width: 100px;" placeholder="#RRGGBB" autocomplete="off" />
+                    <input type="color" wire:model.live="color" style="width: 44px; height: 36px; padding: 2px; border-radius: var(--r-2); border: 1px solid var(--border); cursor: pointer;" />
+                    <input type="text" class="input mono" wire:model.live.debounce.300ms="color" style="width: 100px;" placeholder="#RRGGBB" autocomplete="off" />
                 </div>
                 @error('color') <span class="text-sm" style="color: var(--danger);">{{ $message }}</span> @enderror
             </div>

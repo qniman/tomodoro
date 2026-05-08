@@ -44,6 +44,11 @@
     {{-- Командная палитра ⌘K --}}
     <x-ui.command-palette />
 
+    {{-- До Livewire/Alpine: отложенный app.js (module) иначе не успевает выставить window.pomoWidget --}}
+    @if (file_exists(public_path('build/pomodoro-boot.js')))
+        <script src="{{ asset('build/pomodoro-boot.js') }}"></script>
+    @endif
+
     @livewireScripts
     @stack('scripts')
 </body>

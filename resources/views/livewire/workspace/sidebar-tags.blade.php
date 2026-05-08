@@ -1,6 +1,6 @@
 <div class="sidebar__section sidebar__tags">
     <div class="sidebar__section-title">
-        <span>Теги</span>
+        <span class="sidebar__section-head">Теги</span>
         <span class="sidebar__section-actions">
             <button
                 type="button"
