@@ -2,12 +2,12 @@
 
 namespace App\Providers;
 
+use App\Socialite\VkIdRedirectProvider;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use SocialiteProviders\Manager\SocialiteWasCalled;
-use SocialiteProviders\VKontakte\Provider as VkProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,7 +19,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Event::listen(function (SocialiteWasCalled $event) {
-            $event->extendSocialite('vkontakte', VkProvider::class);
+            $event->extendSocialite('vkontakte', VkIdRedirectProvider::class);
         });
 
         Vite::prefetch(concurrency: 3);
