@@ -17,7 +17,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$PROJECT_ROOT"
 
-BRANCH="main"
+# Ветка для pull: origin/HEAD (main или master у разных проектов), иначе master.
+BRANCH="$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')"
+if [[ -z "$BRANCH" ]]; then
+    for cand in master main; do
+        git show-ref --verify --quiet "refs/remotes/origin/$cand" 2>/dev/null || continue
+        BRANCH="$cand"
+        break
+    done
+fi
+BRANCH="${BRANCH:-master}"
 REMOTE="origin"
 SKIP_GIT=0
 SKIP_NPM=0
@@ -43,7 +52,7 @@ while [[ $# -gt 0 ]]; do
 deploy.sh — деплой после git pull
 
   ./scripts/deploy.sh
-  ./scripts/deploy.sh --branch main
+  ./scripts/deploy.sh --branch master    # по умолчанию: origin/HEAD (у нас master)
   ./scripts/deploy.sh --no-git
   ./scripts/deploy.sh --no-npm
   ./scripts/deploy.sh --no-migrate
