@@ -16,6 +16,7 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+    <style>[x-cloak]{display:none!important}</style>
 
     <script>
         // Раннее переключение темы, чтобы не было «вспышки светлого/тёмного».
