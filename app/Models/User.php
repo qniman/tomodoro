@@ -16,6 +16,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'vk_id',
         'avatar_path',
         'theme',
         'pomodoro_settings',

@@ -45,5 +45,6 @@
     <x-ui.command-palette />
 
     @livewireScripts
+    @stack('scripts')
 </body>
 </html>

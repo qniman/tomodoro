@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LogoutController;
+use App\Http\Controllers\Auth\VkOAuthController;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
 use App\Livewire\Workspace\CalendarView;
@@ -11,6 +12,12 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('guest')->group(function () {
     Route::get('/login', Login::class)->name('login');
     Route::get('/register', Register::class)->name('register');
+
+    Route::get('/auth/vk/redirect', [VkOAuthController::class, 'redirect'])->name('auth.vk.redirect');
+    Route::get('/auth/vk/callback', [VkOAuthController::class, 'callback'])->name('auth.vk.callback');
+    Route::post('/auth/vk/sdk', [VkOAuthController::class, 'sdkLogin'])
+        ->middleware('throttle:20,1')
+        ->name('auth.vk.sdk');
 });
 
 Route::middleware('auth')->group(function () {

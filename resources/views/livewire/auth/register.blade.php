@@ -53,6 +53,8 @@
         </x-ui.button>
     </form>
 
+    @include('auth.partials.oauth-vk')
+
     <p class="auth-card__footer">
         Уже есть аккаунт?
         <a href="{{ route('login') }}" wire:navigate>Войти</a>

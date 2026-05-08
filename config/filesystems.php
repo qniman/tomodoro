@@ -41,7 +41,9 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            // По умолчанию относительный путь — ссылки на файлы не привязаны к APP_URL (деплой без правки .env).
+            // Для CDN: FILES_PUBLIC_URL=https://cdn.example.com/storage
+            'url' => rtrim(env('FILES_PUBLIC_URL', '/storage'), '/'),
             'visibility' => 'public',
             'throw' => false,
             'report' => false,

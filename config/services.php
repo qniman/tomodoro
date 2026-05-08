@@ -35,4 +35,20 @@ return [
         ],
     ],
 
+    'vkontakte' => [
+        'client_id' => env('VKONTAKTE_CLIENT_ID'),
+        'client_secret' => env('VKONTAKTE_CLIENT_SECRET'),
+        'redirect' => env('VKONTAKTE_REDIRECT_URI'),
+        /*
+         | Домен для синтетического email, если VK не вернёт почту (локальное поле users.email).
+         | Настоящие письма на этот домен не отправляются.
+         */
+        'placeholder_email_domain' => env('VK_PLACEHOLDER_EMAIL_DOMAIN', 'oauth.local'),
+        'lang' => env('VK_LANG', 'ru'),
+        /** Права для VK ID виджета (через пробел): например vkid.personal_info email */
+        'id_scope' => env('VK_ID_SCOPE', 'vkid.personal_info email'),
+        /** URL UMD сборки SDK (при необходимости зафиксировать версию) */
+        'id_sdk_script' => env('VK_ID_SDK_SCRIPT', 'https://unpkg.com/@vkid/sdk@2/dist-sdk/umd/index.js'),
+    ],
+
 ];

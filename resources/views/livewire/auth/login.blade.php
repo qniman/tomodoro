@@ -39,6 +39,8 @@
         </x-ui.button>
     </form>
 
+    @include('auth.partials.oauth-vk')
+
     <p class="auth-card__footer">
         Нет аккаунта?
         <a href="{{ route('register') }}" wire:navigate>Создать</a>
