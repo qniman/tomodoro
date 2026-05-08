@@ -98,7 +98,7 @@ if [[ "$SKIP_NPM" -eq 0 ]]; then
         echo "Ошибка: node не найден. Установите Node >= 20 или запустите с --no-npm и выложите собранный public/build/ отдельно." >&2
         exit 1
     fi
-    npm ci
+    npm install
     npm run build
 else
     echo "==> npm пропущен (--no-npm); убедитесь что public/build/ актуален"
