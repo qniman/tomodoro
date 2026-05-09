@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Mail\PasswordResetMail;
+use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
@@ -23,6 +26,11 @@ class User extends Authenticatable
         'password_is_placeholder',
         'last_seen_changelog_version',
         'hide_changelog_modal',
+        'email_verification_code',
+        'email_verification_expires_at',
+        'pending_email',
+        'pending_email_code',
+        'pending_email_expires_at',
     ];
 
     protected $hidden = [
@@ -31,11 +39,13 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-        'password_is_placeholder' => 'boolean',
-        'pomodoro_settings' => 'array',
-        'hide_changelog_modal' => 'boolean',
+        'email_verified_at'              => 'datetime',
+        'email_verification_expires_at'  => 'datetime',
+        'pending_email_expires_at'       => 'datetime',
+        'password'                       => 'hashed',
+        'password_is_placeholder'        => 'boolean',
+        'pomodoro_settings'              => 'array',
+        'hide_changelog_modal'           => 'boolean',
     ];
 
     public const DEFAULT_POMODORO_SETTINGS = [
@@ -97,5 +107,15 @@ class User extends Authenticatable
     public function calendarEvents(): HasMany
     {
         return $this->hasMany(CalendarEvent::class);
+    }
+
+    public function isEmailVerified(): bool
+    {
+        return $this->email_verified_at !== null;
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        Mail::to($this->email)->send(new PasswordResetMail($this, $token));
     }
 }

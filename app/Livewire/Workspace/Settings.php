@@ -2,9 +2,12 @@
 
 namespace App\Livewire\Workspace;
 
+use App\Mail\EmailChangeMail;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
@@ -31,6 +34,13 @@ class Settings extends Component
 
     public $newAvatar = null;
 
+    /* ===== Смена email ===== */
+    public string $newEmail = '';
+
+    public string $emailChangeCode = '';
+
+    public bool $emailChangeSent = false;
+
     /* ===== Безопасность ===== */
     public string $currentPassword = '';
 
@@ -55,9 +65,10 @@ class Settings extends Component
     public function mount(): void
     {
         $user = Auth::user();
-        $this->name = $user->name ?? '';
+        $this->name  = $user->name ?? '';
         $this->email = $user->email ?? '';
         $this->avatarPath = $user->avatar_path;
+        $this->emailChangeSent = (bool) $user->pending_email;
         $this->theme = $user->theme ?? 'auto';
         $this->hideChangelogModal = (bool) ($user->hide_changelog_modal ?? false);
 
@@ -77,21 +88,101 @@ class Settings extends Component
      *  Профиль
      * ============================================================ */
 
-    public function saveProfile(): void
+    public function saveName(): void
+    {
+        $this->validate(['name' => ['required', 'string', 'max:120']]);
+        Auth::user()->update(['name' => trim($this->name)]);
+        $this->dispatch('toast', type: 'success', title: 'Имя обновлено');
+    }
+
+    public function requestEmailChange(): void
     {
         $user = Auth::user();
 
         $this->validate([
-            'name' => ['required', 'string', 'max:120'],
-            'email' => ['required', 'email', 'max:191', Rule::unique('users', 'email')->ignore($user->id)],
+            'newEmail' => [
+                'required', 'email', 'max:191',
+                Rule::unique('users', 'email')->ignore($user->id),
+            ],
         ]);
+
+        $newEmail = trim($this->newEmail);
+
+        if ($newEmail === $user->email) {
+            $this->addError('newEmail', 'Это уже ваш текущий email.');
+            return;
+        }
+
+        $code = (string) random_int(100000, 999999);
 
         $user->update([
-            'name' => trim($this->name),
-            'email' => trim($this->email),
+            'pending_email'             => $newEmail,
+            'pending_email_code'        => $code,
+            'pending_email_expires_at'  => Carbon::now()->addMinutes(30),
         ]);
 
-        $this->dispatch('toast', type: 'success', title: 'Профиль обновлён');
+        Mail::to($newEmail)->send(new EmailChangeMail($user, $newEmail, $code));
+
+        $this->emailChangeSent = true;
+        $this->newEmail = '';
+
+        $this->dispatch('toast',
+            type: 'success',
+            title: 'Код отправлен',
+            message: 'Проверьте новый почтовый ящик.',
+        );
+    }
+
+    public function confirmEmailChange(): void
+    {
+        $user = Auth::user();
+
+        if (
+            ! $user->pending_email ||
+            ! $user->pending_email_code ||
+            ! $user->pending_email_expires_at ||
+            $user->pending_email_expires_at->isPast()
+        ) {
+            $this->addError('emailChangeCode', 'Код устарел. Запросите новый.');
+            $this->emailChangeSent = false;
+            return;
+        }
+
+        if (trim($this->emailChangeCode) !== $user->pending_email_code) {
+            $this->addError('emailChangeCode', 'Неверный код.');
+            return;
+        }
+
+        $user->update([
+            'email'                    => $user->pending_email,
+            'email_verified_at'        => now(),
+            'pending_email'            => null,
+            'pending_email_code'       => null,
+            'pending_email_expires_at' => null,
+        ]);
+
+        $this->email = $user->email;
+        $this->emailChangeCode  = '';
+        $this->emailChangeSent  = false;
+
+        $this->dispatch('toast',
+            type: 'success',
+            title: 'Email изменён',
+            message: 'Новый адрес подтверждён.',
+        );
+    }
+
+    public function cancelEmailChange(): void
+    {
+        Auth::user()->update([
+            'pending_email'            => null,
+            'pending_email_code'       => null,
+            'pending_email_expires_at' => null,
+        ]);
+
+        $this->emailChangeSent = false;
+        $this->newEmail        = '';
+        $this->emailChangeCode = '';
     }
 
     public function uploadAvatar(): void

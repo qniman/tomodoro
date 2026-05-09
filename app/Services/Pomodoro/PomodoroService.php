@@ -131,10 +131,7 @@ class PomodoroService
         $session->save();
 
         if ($session->task_id) {
-            Task::where('id', $session->task_id)
-                ->update([
-                    'spent_seconds' => DB::raw('spent_seconds + '.$delta),
-                ]);
+            Task::where('id', $session->task_id)->increment('spent_seconds', $delta);
         }
 
         return $session;

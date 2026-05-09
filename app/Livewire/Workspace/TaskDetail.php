@@ -129,10 +129,18 @@ class TaskDetail extends Component
     public function updatedProjectId($value): void
     {
         $task = $this->task();
-        if ($task) {
-            $task->project_id = $value !== null && $value !== '' ? (int) $value : null;
-            $task->save();
+        if (! $task) {
+            return;
         }
+
+        if ($value !== null && $value !== '') {
+            $project = Project::forUser(Auth::id())->find((int) $value);
+            $task->project_id = $project?->id;
+        } else {
+            $task->project_id = null;
+        }
+
+        $task->save();
     }
 
     public function updatedPriority($value): void
@@ -160,6 +168,11 @@ class TaskDetail extends Component
     {
         $task = $this->task();
         if (! $task) {
+            return;
+        }
+
+        $tag = Tag::forUser(Auth::id())->find($tagId);
+        if (! $tag) {
             return;
         }
 
@@ -250,6 +263,14 @@ class TaskDetail extends Component
         if (! $task || ! is_array($this->uploadedFiles)) {
             return;
         }
+
+        $this->validate([
+            'uploadedFiles.*' => [
+                'file',
+                'max:10240',
+                'mimes:jpg,jpeg,png,gif,webp,pdf,txt,doc,docx,xls,xlsx,zip',
+            ],
+        ]);
 
         foreach ($this->uploadedFiles as $file) {
             if (! $file) {

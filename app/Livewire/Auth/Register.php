@@ -2,10 +2,14 @@
 
 namespace App\Livewire\Auth;
 
+use App\Livewire\Auth\VerifyEmail;
+use App\Mail\VerifyCodeMail;
+use App\Mail\WelcomeMail;
 use App\Models\Project;
 use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Validate;
@@ -42,7 +46,12 @@ class Register extends Component
         Auth::login($user);
         request()->session()->regenerate();
 
-        $this->redirect(route('app'), navigate: false);
+        // Отправляем приветственное письмо и код подтверждения
+        $code = VerifyEmail::generateAndStoreCode($user);
+        Mail::to($user->email)->send(new WelcomeMail($user));
+        Mail::to($user->email)->send(new VerifyCodeMail($user, $code));
+
+        $this->redirect(route('verify.email'), navigate: false);
     }
 
     /**

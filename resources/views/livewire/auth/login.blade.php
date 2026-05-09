@@ -31,7 +31,7 @@
 
         <div class="hstack" style="justify-content: space-between;">
             <x-ui.checkbox wire:model="remember">Запомнить меня</x-ui.checkbox>
-            {{-- Восстановление пароля — отдельным шагом --}}
+            <a href="{{ route('password.request') }}" wire:navigate style="font-size:0.8125rem;color:var(--text-muted);">Забыли пароль?</a>
         </div>
 
         <x-ui.button variant="primary" type="submit" size="lg" class="btn--block" wireTarget="submit">
