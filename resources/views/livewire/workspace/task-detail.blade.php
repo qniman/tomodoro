@@ -212,6 +212,14 @@
                             wire:model="newChecklistLabel"
                             maxlength="200"
                         />
+                        <button
+                            type="submit"
+                            class="btn btn--ghost btn--icon btn--sm checklist__submit"
+                            aria-label="Добавить пункт"
+                            title="Добавить пункт (Enter)"
+                        >
+                            <x-ui.icon name="corner-down-left" :size="14" />
+                        </button>
                     </form>
                 </div>
             </div>

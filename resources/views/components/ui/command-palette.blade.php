@@ -24,7 +24,7 @@
                     <kbd class="kbd">Esc</kbd>
                 </div>
 
-                <div class="cmdk__list">
+                <div class="cmdk__list" x-ref="list">
                     <template x-for="(item, i) in items" :key="(item.kind === 'group' ? 'g-' + item.label : item.id)">
                         <div>
                             <template x-if="item.kind === 'group'">

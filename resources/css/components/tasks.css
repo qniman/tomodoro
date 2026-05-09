@@ -287,6 +287,13 @@
 }
 .checklist__item:hover .checklist__delete { opacity: 1; }
 
+.checklist__submit {
+    opacity: 0;
+    flex-shrink: 0;
+    transition: opacity var(--dur-fast) var(--ease);
+}
+.checklist__add:focus-within .checklist__submit { opacity: 1; }
+
 .checklist__add {
     display: flex; align-items: center; gap: var(--s-3);
     padding: var(--s-2);

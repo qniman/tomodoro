@@ -87,6 +87,7 @@
                         href="{{ \Illuminate\Support\Facades\Route::has($item['route']) ? route($item['route']) : '#' }}"
                         wire:navigate
                         class="sidebar__link {{ $isActive ? 'is-active' : '' }}"
+                        title="{{ $item['label'] }}"
                     >
                         <x-ui.icon :name="$item['icon']" :size="18" />
                         <span class="sidebar__nav-label">{{ $item['label'] }}</span>
@@ -99,6 +100,7 @@
                     href="{{ route('workspace.index') }}"
                     wire:navigate
                     class="sidebar__link {{ $roomsActive ? 'is-active' : '' }}"
+                    title="Комнаты"
                 >
                     <x-ui.icon name="users" :size="18" />
                     <span class="sidebar__nav-label">Комнаты</span>
@@ -108,6 +110,7 @@
                     href="{{ route('app.settings', ['tab' => 'tags']) }}"
                     wire:navigate
                     class="sidebar__link {{ $tagsSettingsActive ? 'is-active' : '' }}"
+                    title="Теги"
                 >
                     <x-ui.icon name="tag" :size="18" />
                     <span class="sidebar__nav-label">Теги</span>

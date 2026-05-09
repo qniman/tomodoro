@@ -10,46 +10,27 @@ class ReleaseNotesModal extends Component
 {
     public bool $open = false;
 
-    public string $title = '';
-
-    public string $subtitle = '';
-
-    /** @var array<int, string> */
-    public array $items = [];
-
     public function mount(): void
     {
-        $current = (string) config('changelog.version', '');
+        $current = (string) config('changelog.current', '');
 
         if ($current === '' || ! Auth::check()) {
             return;
         }
 
         $user = Auth::user();
-        if (! $user instanceof User) {
+        if (! $user instanceof User || $user->hide_changelog_modal) {
             return;
         }
 
-        if ($user->hide_changelog_modal) {
-            return;
+        if ($this->userNeedsAck($user, $current)) {
+            $this->open = true;
         }
-
-        if (! $this->userNeedsAck($user, $current)) {
-            return;
-        }
-
-        $this->title = (string) config('changelog.title', '');
-        $this->subtitle = (string) config('changelog.subtitle', '');
-        $this->items = array_values(array_filter(
-            (array) config('changelog.items', []),
-            static fn ($line) => is_string($line) && $line !== ''
-        ));
-        $this->open = true;
     }
 
     public function dismiss(): void
     {
-        $current = (string) config('changelog.version', '');
+        $current = (string) config('changelog.current', '');
 
         if ($current !== '' && Auth::check()) {
             $user = Auth::user();
@@ -65,15 +46,26 @@ class ReleaseNotesModal extends Component
     {
         $last = $user->last_seen_changelog_version;
 
-        if ($last === null || $last === '') {
-            return true;
-        }
-
-        return version_compare($last, $currentVersion, '<');
+        return $last === null || $last === '' || version_compare($last, $currentVersion, '<');
     }
 
     public function render()
     {
-        return view('livewire.release-notes-modal');
+        $lastSeen = '';
+        if (Auth::check()) {
+            $user = Auth::user();
+            if ($user instanceof User) {
+                $lastSeen = (string) ($user->last_seen_changelog_version ?? '');
+            }
+        }
+
+        $releases = array_map(
+            static fn (array $r) => array_merge($r, [
+                'is_new' => $lastSeen === '' || version_compare($r['version'], $lastSeen, '>'),
+            ]),
+            (array) config('changelog.releases', [])
+        );
+
+        return view('livewire.release-notes-modal', compact('releases'));
     }
 }
