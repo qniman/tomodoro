@@ -1,6 +1,10 @@
 /**
- * Глобальный command-palette (⌘K / Ctrl+K) и хоткеи навигации.
- * Использует data-action атрибуты — никакой жёсткой связи с серверными именами роутов в JS.
+ * Глобальный command-palette (⌘K / Ctrl+K / Ctrl+/) и хоткеи навигации.
+ *
+ * ВАЖНО: keydown-слушатель вешается ОДИН РАЗ на весь сеанс через модульную
+ * переменную. Это исключает экспоненциальный рост обработчиков при SPA-
+ * навигации (wire:navigate пересоздаёт тело страницы и переинициализирует
+ * Alpine-компонент).
  */
 
 const NAV_LINKS = [
@@ -24,8 +28,24 @@ const ACTIONS = [
     { id: 'sidebar-compact', title: 'Компактная панель',   hint: 'Свернуть / развернуть сайдбар',      icon: '⇤',  keys: '' },
 ];
 
+// Единственный экземпляр компонента — Alpine пересоздаёт его при navigate,
+// но слушатель на window добавляется только один раз.
+let _activeInstance = null;
+let _globalListenerAttached = false;
+
+function attachGlobalListener() {
+    if (_globalListenerAttached) return;
+    _globalListenerAttached = true;
+    window.addEventListener('keydown', (e) => {
+        if (_activeInstance) _activeInstance.handleGlobalKey(e);
+    });
+}
+
 export function registerCommandPalette() {
     if (typeof window === 'undefined') return;
+
+    // Вешаем один глобальный слушатель сразу, до создания Alpine-компонента.
+    attachGlobalListener();
 
     window.cmdPalette = function cmdPalette() {
         return {
@@ -36,11 +56,19 @@ export function registerCommandPalette() {
             sequenceTimer: null,
 
             init() {
-                window.addEventListener('keydown', (e) => this.handleGlobalKey(e));
+                // Регистрируем текущий экземпляр как активный.
+                _activeInstance = this;
+            },
+
+            destroy() {
+                if (_activeInstance === this) _activeInstance = null;
             },
 
             // -------- Глобальные хоткеи --------
             handleGlobalKey(e) {
+                // Игнорируем авто-повтор — удержание клавиши не должно стрелять несколько раз.
+                if (e.repeat) return;
+
                 const tag = e.target?.tagName;
                 const isEditable = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
                     || e.target?.isContentEditable;
@@ -49,12 +77,17 @@ export function registerCommandPalette() {
                 const code = e.code || '';
                 const codeLetter = code.startsWith('Key') ? code.slice(3).toLowerCase() : '';
 
-                // Открыть палитру: Ctrl/Cmd + K
-                if ((e.ctrlKey || e.metaKey) && (codeLetter === 'k' || e.key?.toLowerCase() === 'k')) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.toggle();
-                    return;
+                // Открыть палитру: Ctrl/Cmd + K  или  Ctrl/Cmd + /
+                // Ctrl+K в Chrome на Windows иногда перехватывается браузером.
+                // Ctrl+/ — надёжная альтернатива, не занятая браузером.
+                const isSlash = e.key === '/' || code === 'Slash';
+                if (e.ctrlKey || e.metaKey) {
+                    if (codeLetter === 'k' || e.key?.toLowerCase() === 'k' || isSlash) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.toggle();
+                        return;
+                    }
                 }
 
                 // Esc — закрыть палитру.
@@ -73,7 +106,7 @@ export function registerCommandPalette() {
                     return;
                 }
 
-                // / — поиск
+                // / — поиск (без Ctrl)
                 if (e.key === '/' && !this.open) {
                     e.preventDefault();
                     this.openWith('');
@@ -121,6 +154,14 @@ export function registerCommandPalette() {
             },
 
             navigate(path) {
+                // Не позволяем стартовать новую навигацию, пока предыдущая ещё идёт.
+                if (this._navPending) return;
+                this._navPending = true;
+                const clear = () => { this._navPending = false; };
+                document.addEventListener('livewire:navigated', clear, { once: true });
+                // Снимаем флаг через 3 с как fallback (если навигация не завершилась).
+                setTimeout(clear, 3000);
+
                 if (window.Livewire?.navigate) {
                     window.Livewire.navigate(path);
                 } else {
@@ -151,7 +192,6 @@ export function registerCommandPalette() {
                 const isTaskPage = /^\/app(\/today|\/inbox|\/upcoming|\/all)?\/?$/.test(path);
                 const isCalendarPage = path === '/app/calendar';
 
-                // Паттерн «navigated + dispatch»: переходим, ждём завершения, диспатчим.
                 const navThenDispatch = (targetPath, event) => {
                     const onNav = () => {
                         document.removeEventListener('livewire:navigated', onNav);
@@ -226,6 +266,13 @@ export function registerCommandPalette() {
                 const max = this.selectableItems.length;
                 if (max === 0) return;
                 this.highlight = (this.highlight + delta + max) % max;
+                // Прокручиваем список к выделенному элементу.
+                this.$nextTick(() => {
+                    const list = this.$refs.list;
+                    if (!list) return;
+                    const active = list.querySelector('.cmdk__item.is-active');
+                    if (active) active.scrollIntoView({ block: 'nearest' });
+                });
             },
 
             commit() {

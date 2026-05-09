@@ -23,10 +23,10 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::redirect('/', '/app');
+    Route::redirect('/', '/app/inbox');
+    Route::redirect('/app', '/app/inbox')->name('app');
 
     // Задачи: одна реализация для разных «пресетов» — Сегодня / Входящие / Предстоящие / Все
-    Route::get('/app', TaskBoard::class)->name('app');
     Route::get('/app/today', TaskBoard::class)->defaults('scope', 'today')->name('app.today');
     Route::get('/app/inbox', TaskBoard::class)->defaults('scope', 'inbox')->name('app.inbox');
     Route::get('/app/upcoming', TaskBoard::class)->defaults('scope', 'upcoming')->name('app.upcoming');

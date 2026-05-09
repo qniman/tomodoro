@@ -135,13 +135,13 @@
                                         <span class="task-row__due {{ $dueClass }}">
                                             <x-ui.icon name="calendar" :size="13" />
                                             @if($task->due_at->isToday())
-                                                Сегодня, {{ $task->due_at->format('H:i') }}
+                                                Сегодня{{ $task->all_day ? '' : ', ' . $task->due_at->format('H:i') }}
                                             @elseif($task->due_at->isTomorrow())
-                                                Завтра, {{ $task->due_at->format('H:i') }}
+                                                Завтра{{ $task->all_day ? '' : ', ' . $task->due_at->format('H:i') }}
                                             @elseif($task->due_at->isYesterday())
-                                                Вчера, {{ $task->due_at->format('H:i') }}
+                                                Вчера{{ $task->all_day ? '' : ', ' . $task->due_at->format('H:i') }}
                                             @else
-                                                {{ $task->due_at->locale('ru')->isoFormat('D MMM, HH:mm') }}
+                                                {{ $task->all_day ? $task->due_at->locale('ru')->isoFormat('D MMM') : $task->due_at->locale('ru')->isoFormat('D MMM, HH:mm') }}
                                             @endif
                                         </span>
                                     @endif
@@ -204,13 +204,23 @@
                         </div>
                     @empty
                         <div class="task-list__empty">
-                            <div class="task-list__empty-illustration">
-                                <x-ui.icon name="sparkles" :size="22" />
-                            </div>
-                            <h3>Пусто. Прекрасно.</h3>
-                            <p class="text-muted" style="margin-top: 6px;">
-                                Добавьте задачу — мы поможем сфокусироваться.
-                            </p>
+                            @if($search !== '')
+                                <div class="task-list__empty-illustration">
+                                    <x-ui.icon name="search" :size="22" />
+                                </div>
+                                <h3>Ничего не найдено</h3>
+                                <p class="text-muted" style="margin-top: 6px;">
+                                    По запросу «{{ $search }}» задач не найдено.
+                                </p>
+                            @else
+                                <div class="task-list__empty-illustration">
+                                    <x-ui.icon name="sparkles" :size="22" />
+                                </div>
+                                <h3>Пусто. Прекрасно.</h3>
+                                <p class="text-muted" style="margin-top: 6px;">
+                                    Добавьте задачу — мы поможем сфокусироваться.
+                                </p>
+                            @endif
                         </div>
                     @endforelse
                 </div>

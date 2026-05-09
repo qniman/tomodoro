@@ -294,6 +294,8 @@
     grid-template-columns: 56px repeat(7, 1fr);
     height: 720px;
     overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
     position: relative;
 }
 .cal-week__hours { padding-top: 0; }
@@ -334,6 +336,44 @@
     transition: transform var(--dur-fast) var(--ease);
 }
 .cal-week__event:hover { transform: scale(1.02); }
+
+/* All-day events strip in week view */
+.cal-week__allday-row {
+    display: grid;
+    grid-template-columns: 56px repeat(7, 1fr);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+    min-height: 28px;
+}
+.cal-week__allday-label {
+    font-size: 10px;
+    color: var(--text-subtle);
+    text-align: right;
+    padding: 4px var(--s-2) 0 0;
+    align-self: start;
+}
+.cal-week__allday-col {
+    border-left: 1px solid var(--border);
+    padding: 3px 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.cal-week__allday-pill {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font-size: 10px;
+    color: #fff;
+    border-radius: var(--r-1);
+    padding: 1px 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    border: none;
+}
+.cal-week__allday-pill:hover { opacity: 0.85; }
 
 /* ===== Side panel: day detail ===== */
 .cal-side {

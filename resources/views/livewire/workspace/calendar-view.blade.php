@@ -130,6 +130,24 @@
                                 </button>
                             @endforeach
                         </div>
+                        @if($weekData['hasAllDayEvents'])
+                        <div class="cal-week__allday-row">
+                            <div class="cal-week__allday-label">Весь день</div>
+                            @foreach($weekData['days'] as $day)
+                                <div class="cal-week__allday-col">
+                                    @foreach($day['allDayEvents'] as $event)
+                                        <button type="button"
+                                                class="cal-week__allday-pill"
+                                                style="background: {{ $event['color'] }};"
+                                                wire:click.stop="editEvent({{ $event['id'] }})"
+                                                title="{{ $event['title'] }}">
+                                            {{ \Illuminate\Support\Str::limit($event['title'], 22) }}
+                                        </button>
+                                    @endforeach
+                                </div>
+                            @endforeach
+                        </div>
+                        @endif
                         <div class="cal-week__body">
                             <div class="cal-week__hours">
                                 @for($h = 0; $h < 24; $h++)
@@ -142,8 +160,12 @@
                                         <div class="cal-week__slot" wire:click="openCreateEvent('{{ $day['key'] }}')"></div>
                                     @endfor
                                     @foreach($day['events'] as $event)
+                                        @php
+                                            $evLeft  = 'calc(' . $event['col'] . ' / ' . $event['cols'] . ' * (100% - 8px) + 4px)';
+                                            $evWidth = 'calc((100% - 8px) / ' . $event['cols'] . ' - 2px)';
+                                        @endphp
                                         <div class="cal-week__event"
-                                             style="top: {{ $event['top'] }}px; height: {{ $event['height'] }}px; background: {{ $event['color'] }};"
+                                             style="top: {{ $event['top'] }}px; height: {{ $event['height'] }}px; background: {{ $event['color'] }}; left: {{ $evLeft }}; width: {{ $evWidth }}; right: auto;"
                                              wire:click.stop="editEvent({{ $event['id'] }})"
                                              title="{{ $event['title'] }}">
                                             <div style="font-weight: var(--fw-semibold); font-family: var(--font-mono);">{{ $event['time'] }}</div>
@@ -239,13 +261,8 @@
 
             <x-ui.textarea label="Описание" wire:model="eventDescription" rows="3" placeholder="Необязательно — пара слов о событии" />
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3);">
-                <x-ui.input type="datetime-local" label="Начало" wire:model="eventStartsAt" required />
-                <x-ui.input type="datetime-local" label="Окончание" wire:model="eventEndsAt" required />
-            </div>
-
             <div class="hstack gap-3" style="justify-content: space-between;">
-                <x-ui.checkbox wire:model="eventAllDay" label="Весь день" />
+                <x-ui.checkbox wire:model.live="eventAllDay" label="Весь день" />
                 <div class="hstack gap-2">
                     <span class="text-xs text-muted">Цвет</span>
                     @foreach(['#E5533A','#3B82F6','#10B981','#F59E0B','#8B5CF6','#EC4899'] as $color)
@@ -257,6 +274,13 @@
                     @endforeach
                 </div>
             </div>
+
+            @if(! $eventAllDay)
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3);">
+                <x-ui.input type="datetime-local" label="Начало" wire:model="eventStartsAt" required />
+                <x-ui.input type="datetime-local" label="Окончание" wire:model="eventEndsAt" required />
+            </div>
+            @endif
         </form>
 
         <x-slot:footer>

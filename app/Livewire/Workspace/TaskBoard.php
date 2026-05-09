@@ -71,10 +71,10 @@ class TaskBoard extends Component
         $this->applyScope($query);
 
         if ($this->search !== '') {
-            $like = '%'.$this->search.'%';
+            $like = '%'.mb_strtolower($this->search).'%';
             $query->where(function (Builder $q) use ($like) {
-                $q->where('title', 'like', $like)
-                    ->orWhere('description_text', 'like', $like);
+                $q->whereRaw('LOWER(title) LIKE ?', [$like])
+                    ->orWhereRaw('LOWER(description_text) LIKE ?', [$like]);
             });
         }
 
@@ -190,7 +190,12 @@ class TaskBoard extends Component
         $task->title = $title;
 
         if ($this->scope === 'today') {
-            $task->due_at = Carbon::today()->setTime(20, 0);
+            $task->due_at = Carbon::today();
+            $task->all_day = true;
+        }
+        if ($this->scope === 'upcoming') {
+            $task->due_at = Carbon::tomorrow();
+            $task->all_day = true;
         }
         if ($this->scope === 'project' && $this->projectId) {
             $task->project_id = $this->projectId;

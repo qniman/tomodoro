@@ -244,7 +244,11 @@ function registerPomodoroMorphSync() {
                     scheduleSync(el);
                 }
             });
-            Livewire.hook('morphed', syncAllFromBody);
+            Livewire.hook('morphed', () => {
+                syncAllFromBody();
+                // Если .pomo был пересоздан Livewire (смена $visible), переинициализируем drag.
+                initPomoDrag();
+            });
         }
     };
 
@@ -274,6 +278,8 @@ function loadPomoPos() {
         const pos = JSON.parse(localStorage.getItem(POMO_POS_KEY) || 'null');
         if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
             applyPomoPos(pos.x, pos.y);
+            // Зажимаем в экран после первого кадра рендера — размеры виджета уже известны.
+            requestAnimationFrame(clampPomoToViewport);
         }
     } catch (_) { /* ignore */ }
 }
@@ -311,7 +317,7 @@ function initPomoDrag() {
     if (!el || el._pomoDragInited) return;
     el._pomoDragInited = true;
 
-    const THRESHOLD = 5;
+    const THRESHOLD = 8;
     let st = null; // drag state
 
     el.addEventListener('pointerdown', (e) => {
@@ -406,6 +412,9 @@ export function registerPomodoroWidget() {
     // После livewire:init виджет гарантированно в DOM
     document.addEventListener('livewire:init', tryInit);
 
-    // После SPA-навигации — восстанавливаем позицию (CSS vars сбрасываются при hard reload, но не при navigate)
-    document.addEventListener('livewire:navigated', loadPomoPos);
+    // После SPA-навигации — восстанавливаем позицию; drag мог оторваться если .pomo был пересоздан
+    document.addEventListener('livewire:navigated', () => {
+        loadPomoPos();
+        initPomoDrag();
+    });
 }

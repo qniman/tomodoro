@@ -48,6 +48,15 @@ class CalendarView extends Component
 
     public string $eventColor = '#E5533A';
 
+    public function updatedEventAllDay(): void
+    {
+        if ($this->eventAllDay && $this->eventStartsAt) {
+            $date = Carbon::parse($this->eventStartsAt)->toDateString();
+            $this->eventStartsAt = $date . 'T00:00';
+            $this->eventEndsAt   = $date . 'T23:59';
+        }
+    }
+
     public function mount(): void
     {
         $this->ensureValidCursor();
@@ -213,40 +222,105 @@ class CalendarView extends Component
     protected function buildWeek(): array
     {
         $cursor = $this->cursorImmutable();
-        $start = $cursor->startOfWeek(Carbon::MONDAY);
-        $end = $start->endOfWeek(Carbon::SUNDAY);
+        $start  = $cursor->startOfWeek(Carbon::MONDAY);
+        $end    = $start->endOfWeek(Carbon::SUNDAY);
 
         [$tasksByDate, $eventsByDate] = $this->itemsBetween($start, $end);
 
-        $days = [];
+        $days              = [];
+        $hasAllDayEvents   = false;
+
         for ($i = 0; $i < 7; $i++) {
             $day = $start->addDays($i);
             $key = $day->toDateString();
 
-            $events = ($eventsByDate->get($key) ?? collect())->map(function ($event) {
-                $start = Carbon::parse($event->starts_at);
-                $end = Carbon::parse($event->ends_at);
-                $startMinutes = $start->hour * 60 + $start->minute;
-                $endMinutes = max($startMinutes + 15, $end->hour * 60 + $end->minute);
-                return [
-                    'id' => $event->id,
-                    'title' => $event->title,
-                    'color' => $event->color,
-                    'top' => $startMinutes,
-                    'height' => $endMinutes - $startMinutes,
-                    'time' => $start->format('H:i') . '–' . $end->format('H:i'),
-                ];
-            })->toArray();
+            $allEvents = $eventsByDate->get($key) ?? collect();
+
+            $allDayEvents = $allEvents
+                ->filter(fn ($e) => $e->all_day)
+                ->values()
+                ->map(fn ($e) => [
+                    'id'    => $e->id,
+                    'title' => $e->title,
+                    'color' => $e->color ?: '#E5533A',
+                ])
+                ->toArray();
+
+            if ($allDayEvents) {
+                $hasAllDayEvents = true;
+            }
+
+            $timedEvents = $allEvents
+                ->filter(fn ($e) => ! $e->all_day)
+                ->values()
+                ->map(function ($event) {
+                    $s = Carbon::parse($event->starts_at);
+                    $e = Carbon::parse($event->ends_at);
+                    $startMin = $s->hour * 60 + $s->minute;
+                    $endMin   = max($startMin + 15, $e->hour * 60 + $e->minute);
+
+                    return [
+                        'id'     => $event->id,
+                        'title'  => $event->title,
+                        'color'  => $event->color ?: '#E5533A',
+                        'top'    => $startMin,
+                        'height' => $endMin - $startMin,
+                        'time'   => $s->format('H:i') . '–' . $e->format('H:i'),
+                    ];
+                })
+                ->toArray();
+
+            $timedEvents = $this->assignOverlapColumns($timedEvents);
 
             $days[] = [
-                'date' => $day,
-                'key' => $key,
-                'isToday' => $day->isToday(),
-                'events' => $events,
+                'date'          => $day,
+                'key'           => $key,
+                'isToday'       => $day->isToday(),
+                'events'        => $timedEvents,
+                'allDayEvents'  => $allDayEvents,
             ];
         }
 
-        return ['start' => $start, 'days' => $days];
+        return ['start' => $start, 'days' => $days, 'hasAllDayEvents' => $hasAllDayEvents];
+    }
+
+    protected function assignOverlapColumns(array $events): array
+    {
+        if (count($events) <= 1) {
+            foreach ($events as &$e) {
+                $e['col']  = 0;
+                $e['cols'] = 1;
+            }
+            return $events;
+        }
+
+        usort($events, fn ($a, $b) => $a['top'] <=> $b['top']);
+
+        $lanes = []; // last end-minute per lane
+
+        foreach ($events as &$event) {
+            $placed = false;
+            for ($i = 0; $i < count($lanes); $i++) {
+                if ($lanes[$i] <= $event['top']) {
+                    $event['col'] = $i;
+                    $lanes[$i]    = $event['top'] + $event['height'];
+                    $placed       = true;
+                    break;
+                }
+            }
+            if (! $placed) {
+                $event['col'] = count($lanes);
+                $lanes[]      = $event['top'] + $event['height'];
+            }
+        }
+        unset($event);
+
+        $cols = max(1, count($lanes));
+        foreach ($events as &$event) {
+            $event['cols'] = $cols;
+        }
+
+        return $events;
     }
 
     protected function itemsBetween(CarbonImmutable $start, CarbonImmutable $end): array

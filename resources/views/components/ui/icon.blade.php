@@ -107,8 +107,9 @@
         'code'         => '<path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/>',
         'h1'           => '<path d="M4 12h12M4 6v12M16 6v12"/><path d="M21 6h-3v6h3"/>',
         'h2'           => '<path d="M4 12h12M4 6v12M16 6v12"/><path d="M18 18h4M18 18a2 2 0 1 1 4 0c0 1-1 2-2 3l-2 1"/>',
-        'undo'         => '<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/>',
-        'redo'         => '<path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 15-6.7L21 13"/>',
+        'undo'             => '<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/>',
+        'redo'             => '<path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 15-6.7L21 13"/>',
+        'corner-down-left' => '<polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/>',
 
         // Календарь
         'cal-grid'     => '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M9 14h.01M13 14h.01M17 14h.01M9 18h.01M13 18h.01M17 18h.01"/>',
