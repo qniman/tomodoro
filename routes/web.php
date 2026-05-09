@@ -2,8 +2,11 @@
 
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\VkOAuthController;
+use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
+use App\Livewire\Auth\ResetPassword;
+use App\Livewire\Auth\VerifyEmail;
 use App\Livewire\Workspace\CalendarView;
 use App\Livewire\Workspace\Room;
 use App\Livewire\Workspace\RoomIndex;
@@ -15,6 +18,9 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', Login::class)->name('login');
     Route::get('/register', Register::class)->name('register');
 
+    Route::get('/forgot-password', ForgotPassword::class)->name('password.request');
+    Route::get('/reset-password/{token}', ResetPassword::class)->name('password.reset');
+
     Route::get('/auth/vk/redirect', [VkOAuthController::class, 'redirect'])->name('auth.vk.redirect');
     Route::get('/auth/vk/callback', [VkOAuthController::class, 'callback'])->name('auth.vk.callback');
     Route::post('/auth/vk/sdk', [VkOAuthController::class, 'sdkLogin'])
@@ -23,20 +29,24 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::redirect('/', '/app/inbox');
-    Route::redirect('/app', '/app/inbox')->name('app');
+    Route::get('/verify-email', VerifyEmail::class)->name('verify.email');
 
-    // Задачи: одна реализация для разных «пресетов» — Сегодня / Входящие / Предстоящие / Все
-    Route::get('/app/today', TaskBoard::class)->defaults('scope', 'today')->name('app.today');
-    Route::get('/app/inbox', TaskBoard::class)->defaults('scope', 'inbox')->name('app.inbox');
-    Route::get('/app/upcoming', TaskBoard::class)->defaults('scope', 'upcoming')->name('app.upcoming');
-    Route::get('/app/all', TaskBoard::class)->defaults('scope', 'all')->name('app.all');
+    // Все маршруты приложения требуют подтверждённого email
+    Route::middleware('email.verified')->group(function () {
+        Route::redirect('/', '/app/inbox');
+        Route::redirect('/app', '/app/inbox')->name('app');
 
-    Route::get('/app/calendar', CalendarView::class)->name('app.calendar');
-    Route::get('/app/settings', Settings::class)->name('app.settings');
+        Route::get('/app/today', TaskBoard::class)->defaults('scope', 'today')->name('app.today');
+        Route::get('/app/inbox', TaskBoard::class)->defaults('scope', 'inbox')->name('app.inbox');
+        Route::get('/app/upcoming', TaskBoard::class)->defaults('scope', 'upcoming')->name('app.upcoming');
+        Route::get('/app/all', TaskBoard::class)->defaults('scope', 'all')->name('app.all');
 
-    Route::get('/workspace', RoomIndex::class)->name('workspace.index');
-    Route::get('/workspace/{workspace}', Room::class)->name('workspace.room');
+        Route::get('/app/calendar', CalendarView::class)->name('app.calendar');
+        Route::get('/app/settings', Settings::class)->name('app.settings');
+
+        Route::get('/workspace', RoomIndex::class)->name('workspace.index');
+        Route::get('/workspace/{workspace}', Room::class)->name('workspace.room');
+    });
 
     Route::post('/logout', LogoutController::class)->name('logout');
 });

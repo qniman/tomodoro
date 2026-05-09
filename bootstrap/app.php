@@ -14,6 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn () => route('app'));
+        $middleware->alias([
+            'email.verified' => \App\Http\Middleware\RequireEmailVerification::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

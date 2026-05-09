@@ -41,7 +41,8 @@
                             </div>
                         </div>
 
-                        <form wire:submit.prevent="saveProfile" class="vstack gap-4">
+                        {{-- Имя --}}
+                        <form wire:submit.prevent="saveName" class="vstack gap-4" style="margin-bottom: 4px;">
                             <div class="settings-row">
                                 <div>
                                     <div class="settings-row__label">Имя</div>
@@ -51,23 +52,75 @@
                                     <x-ui.input wire:model="name" :error="$errors->first('name')" maxlength="120" />
                                 </div>
                             </div>
-
-                            <div class="settings-row">
-                                <div>
-                                    <div class="settings-row__label">Электронная почта</div>
-                                    <div class="settings-row__hint">Используется для входа в систему.</div>
-                                </div>
-                                <div>
-                                    <x-ui.input type="email" wire:model="email" :error="$errors->first('email')" />
-                                </div>
-                            </div>
-
                             <div class="hstack gap-2" style="justify-content: flex-end;">
-                                <x-ui.button type="submit" variant="primary" icon="check" wireTarget="saveProfile">
-                                    Сохранить
+                                <x-ui.button type="submit" variant="primary" icon="check" wireTarget="saveName">
+                                    Сохранить имя
                                 </x-ui.button>
                             </div>
                         </form>
+
+                        {{-- Email --}}
+                        <div class="settings-row" style="padding-top: 20px; border-top: 1px solid var(--border);">
+                            <div>
+                                <div class="settings-row__label">Электронная почта</div>
+                                <div class="settings-row__hint">Используется для входа. Изменение требует подтверждения.</div>
+                            </div>
+                            <div>
+                                @if($emailChangeSent)
+                                    {{-- Ожидает подтверждения --}}
+                                    <div style="margin-bottom: 10px;">
+                                        <span style="font-size: var(--fz-sm); color: var(--text-muted);">Ожидает подтверждения:</span>
+                                        <strong style="font-size: var(--fz-sm); margin-left: 4px;">{{ auth()->user()->pending_email }}</strong>
+                                    </div>
+                                    <p style="font-size: var(--fz-sm); color: var(--text-muted); margin: 0 0 12px;">
+                                        Введите 6-значный код из письма, отправленного на новый адрес.
+                                    </p>
+                                    <form wire:submit.prevent="confirmEmailChange" class="vstack gap-2">
+                                        <x-ui.input
+                                            wire:model="emailChangeCode"
+                                            placeholder="000000"
+                                            maxlength="6"
+                                            :error="$errors->first('emailChangeCode')"
+                                        />
+                                        <div class="hstack gap-2">
+                                            <x-ui.button type="submit" variant="primary" icon="check" wireTarget="confirmEmailChange">
+                                                Подтвердить
+                                            </x-ui.button>
+                                            <x-ui.button type="button" variant="ghost" wire:click="cancelEmailChange">
+                                                Отмена
+                                            </x-ui.button>
+                                        </div>
+                                    </form>
+                                @else
+                                    {{-- Текущий email + форма смены --}}
+                                    <div style="margin-bottom: 10px;">
+                                        <span style="font-size: var(--fz-sm); font-weight: 500;">{{ $email }}</span>
+                                        @if(auth()->user()->email_verified_at)
+                                            <span style="display: inline-flex; align-items: center; gap: 3px; margin-left: 8px; font-size: 11px; font-weight: 600; color: var(--success); text-transform: uppercase; letter-spacing: 0.5px;">
+                                                <x-ui.icon name="check" :size="11" /> Подтверждён
+                                            </span>
+                                        @else
+                                            <span style="display: inline-flex; align-items: center; gap: 3px; margin-left: 8px; font-size: 11px; font-weight: 600; color: var(--warning); text-transform: uppercase; letter-spacing: 0.5px;">
+                                                ⚠ Не подтверждён
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <form wire:submit.prevent="requestEmailChange" class="vstack gap-2">
+                                        <x-ui.input
+                                            type="email"
+                                            wire:model="newEmail"
+                                            placeholder="Новый email"
+                                            :error="$errors->first('newEmail')"
+                                        />
+                                        <div class="hstack gap-2" style="justify-content: flex-end;">
+                                            <x-ui.button type="submit" variant="ghost" icon="mail" wireTarget="requestEmailChange">
+                                                Сменить email
+                                            </x-ui.button>
+                                        </div>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
                     </div>
 
                     <div class="settings-section">
