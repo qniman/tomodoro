@@ -75,7 +75,13 @@ class VerifyEmail extends Component
         }
 
         $code = $this->generateAndStoreCode($user);
-        Mail::to($user->email)->send(new VerifyCodeMail($user, $code));
+
+        try {
+            Mail::to($user->email)->send(new VerifyCodeMail($user, $code));
+        } catch (\Throwable $e) {
+            $this->error = 'Не удалось отправить письмо: ' . $e->getMessage();
+            return;
+        }
 
         $this->sent = true;
         $this->error = null;
