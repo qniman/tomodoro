@@ -12,8 +12,11 @@
             'started_at_ms'    => $session->started_at->getTimestampMs(),
             'paused_at_ms'     => $session->paused_at?->getTimestampMs(),
             'remaining'        => $session->remainingSeconds(),
+            'started_by_name'  => $session->startedBy?->name ?? '',
         ];
     }
+
+    $lastMsgId = $messages->last()?->id ?? 0;
 @endphp
 
 <div
@@ -25,12 +28,14 @@
         isOwner: {{ $isOwner ? 'true' : 'false' }},
         initialStatuses:   @js($members->pluck('status', 'user_id')),
         initialPomodoros:  @js($members->pluck('pomodoros_today', 'user_id')),
+        initialLastMsgId:  {{ $lastMsgId }},
     })"
     x-init="init()"
     @room-timer-updated.window="onTimerUpdated($event.detail)"
     @room-chat-message.window="onChatMessage($event.detail)"
     @room-reaction.window="onReaction($event.detail)"
     @room-member-status.window="onMemberStatus($event.detail)"
+    @local-member-status.window="memberStatuses[$event.detail.userId] = $event.detail.status"
 >
     {{-- HEADER --}}
     <div class="ws__header">
@@ -151,13 +156,15 @@
             </div>
 
             <div class="room-timer-panel">
-                @if($session)
-                    <div class="room-timer-phase" :class="timerPhase === 'work' ? 'is-work' : 'is-break'">
-                        <span x-text="timerPhase === 'work' ? '🍅 Фокус' : '☕ Перерыв'">
-                            {{ $session->phaseLabel() }}
+                {{-- Активный таймер (управляется Alpine, всегда в DOM) --}}
+                <div x-show="session !== null" {{ $session ? '' : 'style=display:none' }}>
+                    <div class="room-timer-phase" :class="session?.phase === 'work' ? 'is-work' : 'is-break'">
+                        <span x-text="session?.phase === 'work' ? '🍅 Фокус' : '☕ Перерыв'">
+                            {{ $session?->phaseLabel() ?? '' }}
                         </span>
-                        <span class="room-timer-started-by">
-                            запустил {{ $session->startedBy->name }}
+                        <span class="room-timer-started-by"
+                              x-text="session ? 'запустил ' + (session.started_by_name ?? '') : ''">
+                            {{ $session ? 'запустил ' . ($session->startedBy?->name ?? '') : '' }}
                         </span>
                     </div>
 
@@ -170,7 +177,7 @@
                         </svg>
                         <div class="room-timer-clock__inner">
                             <div class="room-timer-clock__time" x-text="timerDisplay">
-                                {{ gmdate('i:s', $session->remainingSeconds()) }}
+                                {{ $session ? gmdate('i:s', $session->remainingSeconds()) : '00:00' }}
                             </div>
                         </div>
                     </div>
@@ -184,7 +191,10 @@
                         </template>
                         <x-ui.button variant="ghost" icon="stop" wire:click="stopTimer" wire:confirm="Остановить таймер для всех?">Стоп</x-ui.button>
                     </div>
-                @else
+                </div>
+
+                {{-- Таймер не запущен --}}
+                <div x-show="session === null" {{ $session ? 'style=display:none' : '' }}>
                     <div class="room-timer-idle">
                         <div class="room-timer-idle__icon">⏱</div>
                         <div class="room-timer-idle__title">Таймер не запущен</div>
@@ -193,7 +203,7 @@
                             Запустить таймер
                         </x-ui.button>
                     </div>
-                @endif
+                </div>
             </div>
 
             {{-- Реакции-анонсы (floating) --}}
