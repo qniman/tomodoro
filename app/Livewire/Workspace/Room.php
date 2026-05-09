@@ -88,6 +88,9 @@ class Room extends Component
         $member->save();
 
         broadcast(new WorkspaceMemberStatusUpdated($member))->toOthers();
+
+        // Обновляем Alpine-стейт на своём клиенте (toOthers исключает нас из Echo)
+        $this->dispatch('local-member-status', userId: Auth::id(), status: $status);
     }
 
     // ===== Общий таймер =====
@@ -243,7 +246,7 @@ class Room extends Component
             ->where('created_at', '<', now()->subSeconds(30))
             ->delete();
 
-        broadcast(new WorkspaceReactionSent($reaction))->toOthers();
+        broadcast(new WorkspaceReactionSent($reaction)); // без toOthers — отправитель тоже видит свою реакцию
     }
 
     // ===== Управление комнатой =====
