@@ -33,6 +33,8 @@ class Task extends Model
         'spent_seconds',
         'completed_pomodoros',
         'position',
+        'kanban_column_id',
+        'kanban_position',
     ];
 
     protected $casts = [
@@ -63,6 +65,11 @@ class Task extends Model
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
+    }
+
+    public function kanbanColumn(): BelongsTo
+    {
+        return $this->belongsTo(KanbanColumn::class, 'kanban_column_id');
     }
 
     public function parent(): BelongsTo

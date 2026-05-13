@@ -11,3 +11,8 @@ Broadcast::channel('workspace.{workspaceId}', function ($user, $workspaceId) {
         ->where('user_id', $user->id)
         ->exists();
 });
+
+Broadcast::channel('kanban.board.{boardId}', function ($user, $boardId) {
+    $board = \App\Models\KanbanBoard::find($boardId);
+    return $board && $board->canAccess($user->id);
+});

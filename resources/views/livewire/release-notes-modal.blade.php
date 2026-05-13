@@ -82,6 +82,13 @@
                                     </ul>
                                 </div>
                             @endif
+
+                            @if(!empty($release['notice']))
+                                <div class="changelog-notice">
+                                    <x-ui.icon name="info" :size="13" />
+                                    {{ $release['notice'] }}
+                                </div>
+                            @endif
                         </div>
                     @endforeach
                 </div>

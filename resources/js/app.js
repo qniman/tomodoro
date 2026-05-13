@@ -1,5 +1,7 @@
 import './bootstrap';
 import './taskUi';
+import Sortable from 'sortablejs';
+window.Sortable = Sortable;
 import { registerPortalMenus } from './portalMenus';
 import { registerRichEditor } from './editor';
 import { registerPomodoroWidget } from './pomodoro';

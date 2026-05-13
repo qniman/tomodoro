@@ -8,6 +8,8 @@ use App\Livewire\Auth\Register;
 use App\Livewire\Auth\ResetPassword;
 use App\Livewire\Auth\VerifyEmail;
 use App\Livewire\Workspace\CalendarView;
+use App\Livewire\Workspace\KanbanIndex;
+use App\Livewire\Workspace\KanbanView;
 use App\Livewire\Workspace\Room;
 use App\Livewire\Workspace\RoomIndex;
 use App\Livewire\Workspace\Settings;
@@ -44,8 +46,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/app/calendar', CalendarView::class)->name('app.calendar');
         Route::get('/app/settings', Settings::class)->name('app.settings');
 
-        Route::get('/workspace', RoomIndex::class)->name('workspace.index');
-        Route::get('/workspace/{workspace}', Room::class)->name('workspace.room');
+        Route::get('/app/kanban', KanbanIndex::class)->name('app.kanban');
+        Route::get('/app/kanban/{board}', KanbanView::class)->name('app.kanban.board');
+
+        // Комнаты временно отключены — на доработке
+        Route::get('/workspace', fn () => redirect()->route('app.today'))->name('workspace.index');
+        Route::get('/workspace/{workspace}', fn () => redirect()->route('app.today'))->name('workspace.room');
     });
 
     Route::post('/logout', LogoutController::class)->name('logout');

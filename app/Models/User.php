@@ -109,6 +109,11 @@ class User extends Authenticatable
         return $this->hasMany(CalendarEvent::class);
     }
 
+    public function kanbanBoards(): HasMany
+    {
+        return $this->hasMany(KanbanBoard::class)->orderBy('position');
+    }
+
     public function isEmailVerified(): bool
     {
         return $this->email_verified_at !== null;

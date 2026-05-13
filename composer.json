@@ -47,7 +47,7 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#fdba74\" \"php artisan serve --port=8000\" \"npm run dev\" --names='server,vite'"
+            "npx concurrently -c \"#93c5fd,#fdba74,#86efac\" \"php artisan serve --port=8000\" \"npm run dev\" \"php artisan reverb:start\" --names='server,vite,reverb'"
         ],
         "test": [
             "@php artisan config:clear --ansi",

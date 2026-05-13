@@ -12,6 +12,7 @@
     ];
 
     $roomsActive = str_starts_with($currentRoute ?? '', 'workspace.');
+    $kanbanActive = str_starts_with($currentRoute ?? '', 'app.kanban');
 
     $tagsSettingsActive = $currentRoute === 'app.settings' && request()->query('tab') === 'tags';
 @endphp
@@ -97,14 +98,15 @@
                 <hr class="sidebar__divider" role="presentation" />
             </div>
                 <a
-                    href="{{ route('workspace.index') }}"
+                    href="{{ route('app.kanban') }}"
                     wire:navigate
-                    class="sidebar__link {{ $roomsActive ? 'is-active' : '' }}"
-                    title="Комнаты"
+                    class="sidebar__link {{ $kanbanActive ? 'is-active' : '' }}"
+                    title="Доски"
                 >
-                    <x-ui.icon name="users" :size="18" />
-                    <span class="sidebar__nav-label">Комнаты</span>
+                    <x-ui.icon name="layout-kanban" :size="18" />
+                    <span class="sidebar__nav-label">Доски</span>
                 </a>
+
 
                 <a
                     href="{{ route('app.settings', ['tab' => 'tags']) }}"
@@ -150,6 +152,11 @@
                         <x-ui.icon name="sun-medium" :size="16" />
                         <span>Внешний вид</span>
                     </a>
+                    <div class="dropdown__separator"></div>
+                    <button type="button" class="dropdown__item" @click="$dispatch('open-support')">
+                        <x-ui.icon name="circle-help" :size="16" />
+                        <span>Поддержка</span>
+                    </button>
                     <div class="dropdown__separator"></div>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
@@ -202,4 +209,63 @@
     <livewire:workspace.manage-projects-modal />
     <livewire:workspace.manage-tags-modal />
     <livewire:release-notes-modal />
+
+    <div x-data="{ supportOpen: false }" @open-support.window="supportOpen = true">
+    <template x-teleport="body">
+        <div
+            class="modal-backdrop"
+            x-show="supportOpen"
+            x-cloak
+            x-transition.opacity.duration.150ms
+            @click.self="supportOpen = false"
+            @keydown.escape.window="supportOpen = false"
+        >
+            <div class="modal" role="dialog" aria-modal="true" aria-labelledby="support-title" x-show="supportOpen" x-transition.duration.150ms>
+                <div class="modal__header">
+                    <h2 class="modal__title" id="support-title">Поддержка</h2>
+                    <button
+                        type="button"
+                        class="btn btn--ghost btn--icon btn--sm"
+                        @click="supportOpen = false"
+                        aria-label="Закрыть"
+                    >
+                        <x-ui.icon name="x" :size="16" />
+                    </button>
+                </div>
+
+                <div class="modal__body" style="display: flex; flex-direction: column; gap: var(--s-4);">
+                    <p style="font-size: var(--fz-sm); color: var(--text-muted); line-height: 1.6; margin: 0;">
+                        Если вы столкнулись с проблемой, нашли баг или хотите предложить улучшение — напишите нам. Мы читаем каждое письмо.
+                    </p>
+
+                    <div style="display: flex; align-items: center; gap: var(--s-3); padding: var(--s-3) var(--s-4); background: var(--surface-2); border-radius: var(--radius); border: 1px solid var(--border);">
+                        <x-ui.icon name="mail" :size="16" style="color: var(--text-muted); flex-shrink: 0;" />
+                        <span style="font-size: var(--fz-sm); color: var(--text); font-weight: 500; flex: 1;">support@tomodoro.online</span>
+                        <button
+                            type="button"
+                            class="btn btn--ghost btn--sm"
+                            x-data="{ copied: false }"
+                            @click="navigator.clipboard.writeText('support@tomodoro.online'); copied = true; setTimeout(() => copied = false, 2000)"
+                        >
+                            <x-ui.icon name="copy" :size="14" x-show="!copied" />
+                            <x-ui.icon name="check" :size="14" x-show="copied" x-cloak style="color: var(--success);" />
+                            <span x-text="copied ? 'Скопировано' : 'Копировать'"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="modal__footer">
+                    <a
+                        href="mailto:support@tomodoro.online"
+                        class="btn btn--primary"
+                    >
+                        <x-ui.icon name="mail" :size="14" />
+                        Написать письмо
+                    </a>
+                    <button type="button" class="btn btn--ghost" @click="supportOpen = false">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </template>
+    </div>
 </x-layouts.base>

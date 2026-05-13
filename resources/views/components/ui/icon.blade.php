@@ -91,11 +91,14 @@
         'pin'        => '<path d="M12 17v5"/><path d="M9 10.8 6 13.6V17h12v-3.4l-3-2.8V4H9z"/>',
 
         // Состояния
+        'circle-help'  => '<circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
         'info'         => '<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/>',
         'alert-circle' => '<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>',
         'alert-triangle' => '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
-        'check-circle' => '<circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/>',
-        'x-circle'     => '<circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/>',
+        'check-circle'  => '<circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/>',
+        'circle'        => '<circle cx="12" cy="12" r="9"/>',
+        'check-square'  => '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 12 2 2 4-4"/>',
+        'x-circle'      => '<circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/>',
 
         // Редактор
         'bold'         => '<path d="M7 4h6a4 4 0 0 1 0 8H7zM7 12h7a4 4 0 0 1 0 8H7z"/>',
@@ -115,6 +118,10 @@
         'cal-grid'     => '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M9 14h.01M13 14h.01M17 14h.01M9 18h.01M13 18h.01M17 18h.01"/>',
         'cal-week'     => '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M3 16h18"/>',
         'cal-year'     => '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M9 16h6"/>',
+
+        // Канбан
+        'layout-kanban' => '<rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="10" rx="1"/>',
+        'columns'       => '<rect x="3" y="3" width="6" height="18" rx="1"/><rect x="10" y="3" width="6" height="18" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/>',
 
         // Настройки
         'palette'      => '<circle cx="13.5" cy="6.5" r="1.5" fill="currentColor"/><circle cx="17.5" cy="10.5" r="1.5" fill="currentColor"/><circle cx="8.5" cy="7.5" r="1.5" fill="currentColor"/><circle cx="6.5" cy="12.5" r="1.5" fill="currentColor"/><path d="M12 22a10 10 0 1 1 10-10c0 2-1.5 3-3 3h-2a2 2 0 0 0-1 4 2 2 0 0 1-1 3c-1 0-3 0-3 0z"/>',

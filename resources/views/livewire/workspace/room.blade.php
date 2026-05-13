@@ -183,13 +183,9 @@
                     </div>
 
                     <div class="room-timer-controls">
-                        <template x-if="timerPaused">
-                            <x-ui.button variant="primary" icon="play" wire:click="resumeTimer">Продолжить</x-ui.button>
-                        </template>
-                        <template x-if="!timerPaused">
-                            <x-ui.button variant="ghost" icon="pause" wire:click="pauseTimer">Пауза</x-ui.button>
-                        </template>
-                        <x-ui.button variant="ghost" icon="stop" wire:click="stopTimer" wire:confirm="Остановить таймер для всех?">Стоп</x-ui.button>
+                        <x-ui.button variant="primary" icon="play" x-show="timerPaused"  wire:click="resumeTimer">Продолжить</x-ui.button>
+                        <x-ui.button variant="ghost"   icon="pause" x-show="!timerPaused" wire:click="pauseTimer">Пауза</x-ui.button>
+                        <x-ui.button variant="ghost"   icon="stop"  wire:click="stopTimer" wire:confirm="Остановить таймер для всех?">Стоп</x-ui.button>
                     </div>
                 </div>
 
@@ -229,7 +225,7 @@
 
             <div class="room-chat-messages" x-ref="chatMessages">
                 @forelse($messages as $msg)
-                    <div class="room-chat-msg {{ $msg->user_id === auth()->id() ? 'is-mine' : '' }}">
+                    <div class="room-chat-msg {{ $msg->user_id === auth()->id() ? 'is-mine' : '' }}" data-msg-id="{{ $msg->id }}">
                         <x-ui.avatar :name="$msg->user->name" :src="$msg->user->avatar_url" size="xs" />
                         <div class="room-chat-msg__bubble">
                             <span class="room-chat-msg__name">{{ $msg->user->name }}</span>
@@ -356,12 +352,29 @@ window.roomPage = function({ workspaceId, myUserId, session, isOwner, initialSta
         init() {
             this.startTick();
             this.listenEcho();
+
+            // После каждого Livewire-рендера удаляем из chatMessages сообщения,
+            // которые теперь отрисованы в Blade-секции (по data-msg-id).
+            this._livewireUpdateHandler = () => {
+                this.chatMessages = this.chatMessages.filter(
+                    msg => !document.querySelector(`[data-msg-id="${msg.id}"]`)
+                );
+            };
+            document.addEventListener('livewire:update', this._livewireUpdateHandler);
+        },
+
+        destroy() {
+            // Очищаем при SPA-навигации, чтобы слушатели не накапливались.
+            if (this.timerHandle) cancelAnimationFrame(this.timerHandle);
+            if (window.Echo) window.Echo.leave(`workspace.${this.workspaceId}`);
+            if (this._livewireUpdateHandler) {
+                document.removeEventListener('livewire:update', this._livewireUpdateHandler);
+            }
         },
 
         startTick() {
             const tick = () => {
                 this.timerNow = Date.now();
-                // Уведомляем сервер, когда таймер истёк
                 if (this.session && !this.session.paused_at_ms && this.timerRemaining === 0) {
                     this.$wire.timerFinished(this.session.id);
                     this.session = null;
@@ -389,6 +402,9 @@ window.roomPage = function({ workspaceId, myUserId, session, isOwner, initialSta
         },
 
         onChatMessage(msg) {
+            // Не добавляем если уже отрисовано в Blade или уже есть в массиве
+            if (document.querySelector(`[data-msg-id="${msg.id}"]`)) return;
+            if (this.chatMessages.some(m => m.id === msg.id)) return;
             this.chatMessages.push(msg);
             this.$nextTick(() => this.scrollChat());
         },
